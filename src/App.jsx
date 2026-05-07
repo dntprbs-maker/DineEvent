@@ -1,121 +1,86 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import Navbar from './components/Navbar'
+import Home from './pages/Home'
+import Menu from './pages/Menu'
+import Event from './pages/Event'
+import Location from './pages/Location'
 
-function App() {
-  const [count, setCount] = useState(0)
+// Admin Pages
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminInfo from './pages/admin/AdminInfo'
+import AdminMenu from './pages/admin/AdminMenu'
+import AdminEvent from './pages/admin/AdminEvent'
+import AdminMessages from './pages/admin/AdminMessages'
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
+
+// 전역 스타일 추가 (입력창 넘침 방지)
+const GlobalStyle = () => (
+  <style dangerouslySetInnerHTML={{__html: `
+    * { box-sizing: border-box; }
+    input, textarea, select { max-width: 100%; }
+    body { overflow-x: hidden; }
+  `}} />
+);
+
+const AppContent = () => {
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <GlobalStyle />
+      {!isAdminPath && <Navbar />}
+      
+      <main style={{ paddingTop: isAdminPath ? '0' : '80px' }}>
+        <Routes>
+          {/* Customer Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/event" element={<Event />} />
+          <Route path="/location" element={<Location />} />
 
-      <div className="ticks"></div>
+          {/* Admin Routes (Nested) */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/info" replace />} />
+            <Route path="info" element={<AdminInfo />} />
+            <Route path="menu" element={<AdminMenu />} />
+            <Route path="event" element={<AdminEvent />} />
+            <Route path="messages" element={<AdminMessages />} />
+          </Route>
+        </Routes>
+      </main>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {!isAdminPath && (
+        <footer style={{ padding: '4rem', textAlign: 'center', borderTop: '1px solid #222' }}>
+          <p style={{ color: 'var(--text-muted)' }}>&copy; 2026 DINE EVENT. All rights reserved.</p>
+          <button 
+            onClick={() => {
+              window.open('/admin', '_blank', 'width=1200,height=900');
+            }} 
+            style={{ marginTop: '2rem', background: 'transparent', border: '1px solid #333', color: '#444', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+          >
+            관리자 센터 새 창으로 열기
+          </button>
+        </footer>
+      )}
+    </div>
+  );
+};
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+function App() {
+  return (
+    <Router>
+      <ScrollToTop />
+      <AppContent />
+    </Router>
   )
 }
 
