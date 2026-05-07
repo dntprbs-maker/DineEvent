@@ -84,7 +84,7 @@ const AdminInfo = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const maxWidth = 1280;
+          const maxWidth = 1000; // 용량 최적화를 위해 조금 더 축소
           if (width > maxWidth) {
             height = (maxWidth / width) * height;
             width = maxWidth;
@@ -93,11 +93,12 @@ const AdminInfo = () => {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            if (blob) resolve(blob);
-            else reject(new Error("압축 실패"));
-          }, 'image/jpeg', 0.7);
+          
+          // Base64 문자열로 직접 반환 (Storage를 거치지 않음)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          resolve(dataUrl);
         };
+        img.onerror = () => reject(new Error("이미지 로드 실패"));
       };
       reader.onerror = (err) => reject(err);
     });
@@ -107,21 +108,16 @@ const AdminInfo = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setSaving(true);
+    // 더 이상 파일을 고를 때 '저장중'이 되지 않음 (버튼 안 굳음!)
     try {
-      const compressedBlob = await compressImage(file);
-      const storageRef = ref(storage, `images/${type}_${Date.now()}.jpg`);
-      const snapshot = await uploadBytes(storageRef, compressedBlob);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      const base64Image = await compressImage(file);
 
-      if (type === 'hero') setHomeSettings({...homeSettings, heroImage: downloadURL});
-      else if (type === 'menu1') setMenuImages(prev => ({...prev, image1: downloadURL}));
-      else if (type === 'menu2') setMenuImages(prev => ({...prev, image2: downloadURL}));
+      if (type === 'hero') setHomeSettings({...homeSettings, heroImage: base64Image});
+      else if (type === 'menu1') setMenuImages(prev => ({...prev, image1: base64Image}));
+      else if (type === 'menu2') setMenuImages(prev => ({...prev, image2: base64Image}));
     } catch (err) {
       console.error(err);
-      alert('이미지 업로드 실패: ' + err.message);
-    } finally {
-      setSaving(false);
+      alert('이미지 처리 실패: ' + err.message);
     }
   };
 
@@ -264,6 +260,11 @@ const AdminInfo = () => {
           ✅ 수정사항이 저장되었습니다.
         </div>
       )}
+
+      {/* 빌드 버전 표시 (최신 배포 확인용) */}
+      <div style={{ position: 'fixed', bottom: '5px', left: '10px', fontSize: '10px', color: '#333', zIndex: 9999, pointerEvents: 'none' }}>
+        v1.0.1 - Latest Patch
+      </div>
 
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/', // SPA 라우팅을 위해 절대 경로로 설정
+  base: './', // 배포 시 경로 꼬임 방지를 위해 상대 경로로 변경
 })
