@@ -1,26 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebase';
+import { useNavigate, useLocation, useBlocker } from 'react-router-dom';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import MobileAdminInfo from '../../components/admin/MobileAdminInfo';
+import { db, storage } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const AdminInfo = () => {
-  const [homeSettings, setHomeSettings] = useState({ 
-    topLabel: 'PREMIUM DINING EXPERIENCE',
-    title: '다인이벤트의 특별한\\n미식 축제에 초대합니다', 
-    subtitle: '최고급 식재료와 셰프의 장인정신이 깃든 시즌 메뉴를 지금 바로 만나보세요.', 
-    heroImage: '' 
-  });
-  
+  const navigate = useNavigate();
+  const [homeSettings, setHomeSettings] = useState({ brandName: '', topLabel: '', title: '', subtitle: '', heroImage: '' });
+  const [menuImages, setMenuImages] = useState({ image1: '', image2: '' });
   const [locationSettings, setLocationSettings] = useState({ address: '' });
+  const [originalData, setOriginalData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const homeDoc = await getDoc(doc(db, 'settings', 'home'));
-        if (homeDoc.exists()) setHomeSettings(prev => ({...prev, ...homeDoc.data()}));
-
         const locDoc = await getDoc(doc(db, 'settings', 'location'));
-        if (locDoc.exists()) setLocationSettings(locDoc.data());
+        const menuDoc = await getDoc(doc(db, 'content', 'menu_image'));
+        const hData = homeDoc.exists() ? homeDoc.data() : homeSettings;
+        const lData = locDoc.exists() ? locDoc.data() : locationSettings;
+        const mData = menuDoc.exists() ? { image1: menuDoc.data().image1 || menuDoc.data().imageUrl || '', image2: menuDoc.data().image2 || '' } : menuImages;
+        setHomeSettings(hData);
+        setLocationSettings(lData);
+        setMenuImages(mData);
+        setOriginalData(JSON.stringify({ hData, lData, mData }));
       } catch (err) {
         console.error("Data fetch error:", err);
       } finally {
@@ -30,66 +38,240 @@ const AdminInfo = () => {
     fetchData();
   }, []);
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setHomeSettings({...homeSettings, heroImage: reader.result});
-      reader.readAsDataURL(file);
-    }
-  };
+  const isDirty = originalData !== JSON.stringify({ hData: homeSettings, lData: locationSettings, mData: menuImages });
 
-  const handleSave = async () => {
+  // [NEW] 페이지 이탈 차단 로직 (React Router 6.7+)
+  const blocker = useBlocker(({ nextLocation }) => isDirty && !saving);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  const handleSave = async (silent = false) => {
+    setSaving(true);
     try {
       await setDoc(doc(db, 'settings', 'home'), homeSettings);
       await setDoc(doc(db, 'settings', 'location'), locationSettings);
-      alert('클라우드에 설정이 저장되었습니다! 모든 기기에 즉시 반영됩니다.');
+      await setDoc(doc(db, 'content', 'menu_image'), { imageUrl: menuImages.image1, image1: menuImages.image1, image2: menuImages.image2 });
+      setOriginalData(JSON.stringify({ hData: homeSettings, lData: locationSettings, mData: menuImages }));
+      if (!silent) { setShowToast(true); setTimeout(() => setShowToast(false), 2000); }
+      return true;
     } catch (err) {
-      alert('저장 실패: Firestore 설정을 확인해주세요.');
-      console.error(err);
+      alert('저장 실패: ' + err.message);
+      return false;
+    } finally {
+      setSaving(false);
     }
   };
 
+  const handleSaveAndProceed = async () => {
+    const success = await handleSave(true);
+    if (success && blocker.proceed) blocker.proceed();
+  };
+
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxWidth = 1280;
+          if (width > maxWidth) {
+            height = (maxWidth / width) * height;
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("압축 실패"));
+          }, 'image/jpeg', 0.7);
+        };
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleImageUpload = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setSaving(true);
+    try {
+      const compressedBlob = await compressImage(file);
+      const storageRef = ref(storage, `images/${type}_${Date.now()}.jpg`);
+      const snapshot = await uploadBytes(storageRef, compressedBlob);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      if (type === 'hero') setHomeSettings({...homeSettings, heroImage: downloadURL});
+      else if (type === 'menu1') setMenuImages(prev => ({...prev, image1: downloadURL}));
+      else if (type === 'menu2') setMenuImages(prev => ({...prev, image2: downloadURL}));
+    } catch (err) {
+      console.error(err);
+      alert('이미지 업로드 실패: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isMobile = useIsMobile(768);
+
   if (loading) return <div className="glass" style={{ padding: '2rem', textAlign: 'center' }}>데이터 불러오는 중...</div>;
 
+  if (isMobile) {
+    return (
+      <div className="admin-content-inner">
+        <MobileAdminInfo 
+          homeSettings={homeSettings} 
+          setHomeSettings={setHomeSettings}
+          locationSettings={locationSettings}
+          setLocationSettings={setLocationSettings}
+          menuImages={menuImages}
+          handleImageUpload={handleImageUpload}
+          handleSave={handleSave}
+          saving={saving}
+        />
+        {/* 이동 차단 모달은 공통으로 사용 */}
+        {blocker.state === "blocked" && (
+          <div style={{ 
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', 
+            zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <div className="glass" style={{ padding: '2rem', borderRadius: '30px', border: '1px solid var(--primary)', background: '#111', width: '90%', textAlign: 'center' }}>
+              <h2 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>저장되지 않았습니다</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button onClick={handleSaveAndProceed} style={{ background: 'var(--primary)', padding: '1rem', borderRadius: '10px', fontWeight: 'bold' }}>저장 후 이동</button>
+                <button onClick={() => blocker.proceed?.()} style={{ background: 'transparent', color: '#ff4d4d', border: '1px solid #331111', padding: '1rem', borderRadius: '10px' }}>저장 안함</button>
+                <button onClick={() => blocker.reset?.()} style={{ color: '#888', border: 'none', background: 'none' }}>취소</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="glass" style={{ padding: '2rem' }}>
-      <h3 style={{ marginBottom: '2rem', color: 'var(--primary)' }}>🏠 식당 및 사이트 문구 관리 [v2.5-ULTIMATE-STABLE]</h3>
+    <div className="admin-content-inner" style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
       
-      <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <h4 style={{ color: 'var(--primary)', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>홈 화면 문구</h4>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>상단 강조 문구</label>
-            <input type="text" value={homeSettings.topLabel} onChange={(e) => setHomeSettings({...homeSettings, topLabel: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '8px' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>메인 대제목</label>
-            <textarea value={homeSettings.title} onChange={(e) => setHomeSettings({...homeSettings, title: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '8px', height: '80px' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>메인 소제목</label>
-            <textarea value={homeSettings.subtitle} onChange={(e) => setHomeSettings({...homeSettings, subtitle: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '8px', height: '60px' }} />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>메인 배경 이미지</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <input type="file" accept="image/*" onChange={handleFileUpload} />
-              {homeSettings.heroImage && <button onClick={() => setHomeSettings({...homeSettings, heroImage: ''})} style={{ background: '#ff4444', color: '#fff', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem' }}>삭제</button>}
+      {/* [NEW] 중앙 집중식 이동 차단 모달 UI */}
+      {blocker.state === "blocked" && (
+        <div style={{ 
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', 
+          zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          <div className="glass" style={{ 
+            padding: '3rem', borderRadius: '40px', border: '1px solid var(--primary)', 
+            background: '#111', width: 'min(90%, 500px)', textAlign: 'center',
+            boxShadow: '0 30px 100px rgba(0,0,0,1)'
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>⚠️</div>
+            <h2 style={{ color: 'var(--primary)', marginBottom: '1rem', fontWeight: '900' }}>저장되지 않았습니다</h2>
+            <p style={{ color: '#aaa', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '2.5rem' }}>
+              수정하신 소중한 정보가 아직 저장되지 않았습니다.<br/>
+              이대로 페이지를 벗어나시겠습니까?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <button onClick={handleSaveAndProceed} className="premium-gold-button" style={{ padding: '1.2rem', borderRadius: '15px', fontSize: '1.1rem' }}>
+                💾 변경사항 저장 후 이동
+              </button>
+              <button onClick={() => blocker.proceed?.()} style={{ background: 'transparent', color: '#ff4d4d', border: '1px solid #331111', padding: '1rem', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>
+                🗑️ 저장 안함 (취소)
+              </button>
+              <button onClick={() => blocker.reset?.()} style={{ background: 'transparent', color: '#666', border: 'none', padding: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                닫기 (계속 수정하기)
+              </button>
             </div>
           </div>
         </div>
+      )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <h4 style={{ color: 'var(--primary)', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>위치 정보 관리</h4>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>식당 주소</label>
-            <input type="text" value={locationSettings.address} onChange={(e) => setLocationSettings({address: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '1rem', color: '#fff', borderRadius: '8px' }} />
+      <div className="glass admin-card-glass">
+        <h3 style={{ marginBottom: '2.5rem', color: 'var(--primary)', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>🏠 식당 관리</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <h4 style={{ color: 'var(--primary)', borderBottom: '1px solid #222', paddingBottom: '0.5rem', fontSize: '1rem' }}>기본 정보 & 이미지</h4>
+            <div>
+              <label style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>🚩 매장 이름</label>
+              <input type="text" value={homeSettings.brandName} onChange={(e) => setHomeSettings({...homeSettings, brandName: e.target.value})} style={{ width: '100%', background: '#111', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>📍 매장 주소</label>
+              <input type="text" value={locationSettings.address} onChange={(e) => setLocationSettings({address: e.target.value})} style={{ width: '100%', background: '#111', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
+            </div>
+            <div style={{ marginTop: '0.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>🖼️ 메인 배경 이미지</label>
+              <div className="file-input-wrapper">
+                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'hero')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
+                {homeSettings.heroImage && <img src={homeSettings.heroImage} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />}
+              </div>
+            </div>
+            <div style={{ marginTop: '0.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>🍴 메뉴 이미지 1 (메인)</label>
+              <div className="file-input-wrapper" style={{ border: '1px dashed var(--primary)' }}>
+                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'menu1')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
+                {menuImages.image1 && <img src={menuImages.image1} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />}
+              </div>
+            </div>
+            <div style={{ marginTop: '0.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>🍴 메뉴 이미지 2 (추가)</label>
+              <div className="file-input-wrapper" style={{ border: '1px dashed var(--primary)' }}>
+                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'menu2')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
+                {menuImages.image2 && <img src={menuImages.image2} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <h4 style={{ color: 'var(--primary)', borderBottom: '1px solid #222', paddingBottom: '0.5rem', fontSize: '1rem' }}>홈 화면 문구 설정</h4>
+            <div>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>✨ 상단 강조 문구</label>
+              <input type="text" value={homeSettings.topLabel} onChange={(e) => setHomeSettings({...homeSettings, topLabel: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>메인 대제목</label>
+              <textarea value={homeSettings.title} onChange={(e) => setHomeSettings({...homeSettings, title: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px', height: '70px', resize: 'none' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>메인 소제목</label>
+              <textarea value={homeSettings.subtitle} onChange={(e) => setHomeSettings({...homeSettings, subtitle: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px', height: '100px', resize: 'none' }} />
+            </div>
           </div>
         </div>
       </div>
 
-      <button className="btn-primary" onClick={handleSave} style={{ width: '100%', marginTop: '3rem', padding: '1rem', fontSize: '1rem' }}>클라우드에 저장하기</button>
+      <div className="floating-btn-container">
+        <button onClick={() => handleSave()} disabled={saving} className="premium-gold-button" style={{ pointerEvents: 'auto', padding: '1.2rem 4rem', borderRadius: '50px', fontSize: '1.1rem' }}>
+          {saving ? '⏳ 저장중...' : '💾 변경내용저장'}
+        </button>
+      </div>
+
+      {showToast && (
+        <div style={{ position: 'fixed', bottom: '110px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0, 0, 0, 0.9)', color: 'var(--primary)', padding: '1rem 2rem', borderRadius: '15px', border: '1px solid var(--primary)', zIndex: 100001, animation: 'fadeInUp 0.3s ease-out', fontWeight: 'bold' }}>
+          ✅ 수정사항이 저장되었습니다.
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        @media (max-width: 800px) {
+          div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+        }
+      `}} />
     </div>
   );
 };

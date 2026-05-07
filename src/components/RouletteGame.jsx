@@ -3,16 +3,15 @@ import { db } from '../firebase';
 import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const RouletteGame = () => {
-  const [rotation, setRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const [result, setResult] = useState(null);
   const [submitted, setSubmitted] = useState(false);
-  const [prizes, setPrizes] = useState([]); // 현재 렌더링 중인 경품 목록
+  const [prizes, setPrizes] = useState([]); 
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', agreed: false });
+  const [slotText, setSlotText] = useState(""); 
   
-  const currentRotationRef = useRef(0);
-  const isLockedRef = useRef(false); // 중복 클릭 방지용 락
+  const isLockedRef = useRef(false); 
 
   useEffect(() => {
     fetchInitialPrizes();
@@ -22,7 +21,7 @@ const RouletteGame = () => {
     try {
       const prizeDoc = await getDoc(doc(db, 'content', 'prizes'));
       if (prizeDoc.exists()) {
-        const data = prizeDoc.data().prizes || [];
+        const data = prizeDoc.data().list || [];
         setPrizes(data);
       }
     } catch (err) {
@@ -30,16 +29,29 @@ const RouletteGame = () => {
     }
   };
 
+  const formatPhoneNumber = (value) => {
+    if (!value) return value;
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    const phoneNumberLength = phoneNumber.length;
+    if (phoneNumberLength < 4) return phoneNumber;
+    if (phoneNumberLength < 8) {
+      return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
+    }
+    return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7, 11)}`;
+  };
+
+  const handlePhoneChange = (e) => {
+    const formattedValue = formatPhoneNumber(e.target.value);
+    setForm({ ...form, phone: formattedValue });
+  };
+
   const spin = async (validatedPhone) => {
     if (isLockedRef.current || prizes.length === 0) return;
     isLockedRef.current = true;
     setIsSpinning(true);
     
-    // 1. [핵심] 스핀 직전에 DB에서 최신 데이터를 가져오고, 로컬 상태와 '즉시' 동기화
     const snap = await getDoc(doc(db, 'content', 'prizes'));
-    const livePrizes = snap.exists() ? snap.data().prizes : [...prizes];
-    
-    // 렌더링에 사용되는 prizes 상태를 최신화하여 화면상의 레이블과 당첨 계산 대상이 100% 일치하도록 보장
+    const livePrizes = snap.exists() ? (snap.data().list || []) : [...prizes];
     setPrizes(livePrizes);
 
     const availablePrizes = livePrizes.filter(p => p.currentCount > 0);
@@ -50,18 +62,13 @@ const RouletteGame = () => {
       return;
     }
 
-    // 2. 당첨자 결정 (가중치 기반 랜덤)
     const totalWeight = livePrizes.reduce((sum, p) => sum + (p.currentCount > 0 ? Number(p.totalCount) : 0), 0);
     let random = Math.random() * totalWeight;
     let winnerIndex = -1;
-    
     for (let i = 0; i < livePrizes.length; i++) {
       if (livePrizes[i].currentCount <= 0) continue;
       const weight = Number(livePrizes[i].totalCount);
-      if (random < weight) {
-        winnerIndex = i;
-        break;
-      }
+      if (random < weight) { winnerIndex = i; break; }
       random -= weight;
     }
 
@@ -71,45 +78,33 @@ const RouletteGame = () => {
       return;
     }
 
-    // 3. [초정밀 물리 엔진 v2.5] 6시(180도) 화살표 기준 계산
-    const numPrizes = livePrizes.length;
-    const segmentAngle = 360 / numPrizes;
-    
-    // Ci: Rotation 0일 때 해당 칸의 중심 각도 (12시 기준 시계방향)
-    const Ci = (winnerIndex * segmentAngle) + (segmentAngle / 2);
-    
-    // R: 해당 칸을 6시(180도)로 가져오기 위해 휠이 돌아야 하는 각도
-    const R = (180 - Ci + 360) % 360;
-    
-    // 최소 10바퀴 이상 돌도록 설정하여 박진감 제공
-    const rotationIncrease = (360 * 10) + R;
-    const nextRotation = currentRotationRef.current + (360 - (currentRotationRef.current % 360)) + rotationIncrease;
-    
-    currentRotationRef.current = nextRotation;
-    
     const winnerPrize = livePrizes[winnerIndex];
-    console.log(`[Spin Logic] Winner: ${winnerPrize.text}, Index: ${winnerIndex}, Segment Angle: ${segmentAngle}, Target R: ${R}`);
 
-    setRotation(nextRotation);
+    let count = 0;
+    const slotInterval = setInterval(() => {
+      const randomIndex = Math.floor(Math.random() * livePrizes.length);
+      setSlotText(livePrizes[randomIndex].name);
+      count++;
+    }, 100);
 
-    // 4. 애니메이션 종료(4.5초) 후 결과 처리
     setTimeout(async () => {
+      clearInterval(slotInterval);
       const updatedPrizes = livePrizes.map((p, i) => 
         i === winnerIndex ? { ...p, currentCount: Math.max(0, p.currentCount - 1) } : p
       );
       
       try {
-        await setDoc(doc(db, 'content', 'prizes'), { prizes: updatedPrizes });
+        await setDoc(doc(db, 'content', 'prizes'), { list: updatedPrizes });
         await addDoc(collection(db, 'entries'), {
           name: form.name,
           phone: validatedPhone,
-          prize: winnerPrize.text,
+          prize: winnerPrize.name,
           date: new Date().toLocaleString(),
           timestamp: serverTimestamp()
         });
         
         setPrizes(updatedPrizes);
-        setResult(winnerPrize.text);
+        setResult(winnerPrize.name);
         setSubmitted(true);
       } catch (err) {
         console.error("Save error:", err);
@@ -117,7 +112,7 @@ const RouletteGame = () => {
         setIsSpinning(false);
         isLockedRef.current = false;
       }
-    }, 4600); 
+    }, 2500); 
   };
 
   const handleFormSubmit = (e) => {
@@ -129,74 +124,69 @@ const RouletteGame = () => {
     spin(cleanPhone);
   };
 
-  if (prizes.length === 0) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--primary)' }}>룰렛 로딩 중...</div>;
+  if (prizes.length === 0) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--primary)' }}>데이터 로딩 중...</div>;
 
   return (
-    <div className="roulette-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', width: '100%' }}>
+    <div className="roulette-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', width: '100%', minHeight: '400px', justifyContent: 'center' }}>
       
-      {/* 룰렛 본체 */}
-      <div className="roulette-container" style={{ position: 'relative', width: '320px', height: '320px' }}>
-        {/* 하단 화살표 (6시 방향 고정) */}
-        <div style={{ 
-          position: 'absolute', bottom: '-45px', left: '50%', transform: 'translateX(-50%)', 
-          zIndex: 100, width: 0, height: 0, 
-          borderLeft: '22px solid transparent', borderRight: '22px solid transparent', 
-          borderBottom: '44px solid var(--primary)',
-          filter: 'drop-shadow(0 0 10px rgba(197, 160, 89, 0.6))'
-        }}></div>
-
-        <div className="roulette-wheel" style={{ 
-          width: '100%', height: '100%', borderRadius: '50%', border: '10px solid var(--primary)', 
-          overflow: 'hidden', position: 'relative',
-          transform: `rotate(${rotation}deg)`, 
-          transition: isSpinning ? 'transform 4.5s cubic-bezier(0.15, 0, 0.15, 1)' : 'none',
-          background: `conic-gradient(${prizes.map((p, i) => `${p.color || (i % 2 === 0 ? '#1a1a1a' : '#2a2a2a')} ${i * (360/prizes.length)}deg ${(i+1) * (360/prizes.length)}deg`).join(', ')})`
-        }}>
-          {prizes.map((prize, i) => {
-            const angle = (i * (360/prizes.length)) + (180/prizes.length);
-            return (
-              <div key={i} style={{ 
-                position: 'absolute', top: '50%', left: '50%', width: '50%', height: '60px', 
-                marginTop: '-30px', transformOrigin: 'left center', 
-                transform: `rotate(${angle}deg)`, 
-                display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: '35px' 
-              }}>
-                <div style={{ transform: `rotate(${-angle}deg)`, textAlign: 'center' }}>
-                  <span style={{ color: 'var(--primary)', fontWeight: '900', fontSize: '0.85rem', wordBreak: 'keep-all' }}>{prize.text}</span>
-                  {prize.currentCount <= 0 && <span style={{ color: '#ff4444', fontSize: '0.6rem', display: 'block', fontWeight: 'bold' }}>품절</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '45px', height: '45px', background: 'var(--primary)', borderRadius: '50%', zIndex: 50, border: '5px solid #000' }}></div>
-      </div>
-
-      {/* 결과 UI */}
       <div style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         
         {submitted && !isSpinning && (
-          <div className="glass fade-in" style={{ padding: '2.5rem', borderRadius: '25px', background: 'rgba(197, 160, 89, 0.15)', border: '2px solid var(--primary)', textAlign: 'center' }}>
-            <h3 style={{ fontSize: '1.4rem', color: 'var(--primary)', marginBottom: '1rem' }}>🎉 당첨을 축하드립니다!</h3>
-            <p style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>{result}</p>
-            <button className="btn-primary" style={{ padding: '1rem 3rem' }} onClick={() => setSubmitted(false)}>한 번 더 도전하기</button>
+          <div className="result-card fade-in" style={{ 
+            padding: '4rem 2rem', borderRadius: '30px', 
+            background: `linear-gradient(135deg, ${result?.includes('꽝') ? 'rgba(255, 50, 50, 0.15)' : 'rgba(197, 160, 89, 0.2)'}, rgba(0,0,0,0.9))`, 
+            border: `3px solid ${result?.includes('꽝') ? '#ff4d4d' : 'var(--primary)'}`, textAlign: 'center',
+            boxShadow: `0 0 60px ${result?.includes('꽝') ? 'rgba(255, 50, 50, 0.4)' : 'rgba(197, 160, 89, 0.5)'}`,
+            animation: 'impact 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49)',
+            position: 'relative', overflow: 'hidden'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+              <span style={{ fontSize: '1.8rem', animation: 'twinkle 1s infinite' }}>{result?.includes('꽝') ? '💦' : '✨'}</span>
+              <h3 style={{ fontSize: '1.8rem', color: result?.includes('꽝') ? '#ff4d4d' : 'var(--primary)', fontWeight: '900', letterSpacing: '2px' }}>
+                {result?.includes('꽝') ? '아쉽네요' : '축하합니다!'}
+              </h3>
+              <span style={{ fontSize: '1.8rem', animation: 'twinkle 1s infinite alternate' }}>{result?.includes('꽝') ? '💦' : '✨'}</span>
+            </div>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <p style={{ 
+                color: '#fff', 
+                fontSize: 'clamp(2rem, 8vw, 3.5rem)', 
+                fontWeight: '900', 
+                textShadow: `0 0 20px ${result?.includes('꽝') ? 'rgba(255, 77, 77, 0.8)' : 'rgba(255, 255, 255, 0.8)'}, 0 0 40px ${result?.includes('꽝') ? 'rgba(255, 77, 77, 0.4)' : 'rgba(197, 160, 89, 0.6)'}`,
+                lineHeight: '1.3',
+                wordBreak: 'keep-all'
+              }}>
+                {result}
+              </p>
+            </div>
           </div>
         )}
 
-        {/* 참여 안내 */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.8rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p style={{ color: 'var(--primary)', fontWeight: '800', fontSize: '1rem', marginBottom: '1rem', textAlign: 'center' }}>📋 이벤트 참여 가이드</p>
-          <ul style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'left', listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <li>• 1인 1회 참여 가능하며, 현장 상황에 따라 제한될 수 있습니다.</li>
-            <li>• 당첨 경품은 매장 카운터에서 당첨 화면 확인 후 즉시 지급됩니다.</li>
-            <li>• 입력하신 정보는 이벤트 당첨 안내 및 마케팅 용도로 활용됩니다.</li>
-          </ul>
-        </div>
-
         {!isSpinning && !submitted && (
-          <button className="btn-primary" onClick={() => setShowModal(true)} style={{ width: '100%', padding: '1.6rem', fontSize: '1.3rem', borderRadius: '15px' }}>행운의 룰렛 돌리기</button>
+          <button className="btn-primary" onClick={() => setShowModal(true)} style={{ width: '100%', padding: '1.6rem', fontSize: '1.3rem', borderRadius: '15px' }}>행운의 추첨 시작하기</button>
         )}
-        {isSpinning && <p style={{ color: 'var(--primary)', fontWeight: 'bold', textAlign: 'center', animation: 'pulse 1s infinite', fontSize: '1.1rem' }}>행운의 여신이 응답하는 중...</p>}
+
+        {isSpinning && (
+          <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '30px', border: '1px dashed var(--primary)' }}>
+            <div style={{ height: '80px', overflow: 'hidden', marginBottom: '2rem' }}>
+              <p style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--primary)', animation: 'slotScroll 0.1s infinite linear' }}>
+                {slotText}
+              </p>
+            </div>
+            <p style={{ color: '#fff', fontWeight: 'bold', opacity: 0.7, fontSize: '1rem' }}>과연 행운의 결과는...?</p>
+          </div>
+        )}
+
+        {!submitted && !isSpinning && (
+          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.8rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', marginTop: '4rem' }}>
+            <p style={{ color: 'var(--primary)', fontWeight: '800', fontSize: '1rem', marginBottom: '1rem', textAlign: 'center' }}>📋 이벤트 참여 가이드</p>
+            <ul style={{ color: '#fff', fontSize: '0.9rem', textAlign: 'left', listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <li>• 1인 1회 참여 가능하며, 현장 상황에 따라 제한될 수 있습니다.</li>
+              <li>• 당첨 경품은 매장 카운터에서 당첨 화면 확인 후 즉시 지급됩니다.</li>
+              <li>• 입력하신 정보는 이벤트 당첨 안내 및 마케팅 용도로 활용됩니다.</li>
+            </ul>
+          </div>
+        )}
       </div>
 
       {showModal && (
@@ -205,22 +195,22 @@ const RouletteGame = () => {
             <h3 style={{ color: 'var(--primary)', marginBottom: '2rem', textAlign: 'center', fontSize: '1.5rem' }}>이벤트 응모</h3>
             <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>성함</label>
-                <input type="text" placeholder="성함을 입력해주세요" className="glass-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required style={{ background: '#111', border: '1px solid #333', padding: '1.2rem', color: '#fff', borderRadius: '12px' }} />
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>닉네임</label>
+                <input type="text" placeholder="닉네임을 입력해주세요" className="glass-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required style={{ background: '#111', border: '1px solid #333', padding: '1.2rem', color: '#fff', borderRadius: '12px' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>연락처</label>
-                <input type="tel" placeholder="010-0000-0000" className="glass-input" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} required style={{ background: '#111', border: '1px solid #333', padding: '1.2rem', color: '#fff', borderRadius: '12px' }} />
+                <input type="tel" placeholder="010-0000-0000" className="glass-input" value={form.phone} onChange={handlePhoneChange} required style={{ background: '#111', border: '1px solid #333', padding: '1.2rem', color: '#fff', borderRadius: '12px' }} />
               </div>
               <div style={{ fontSize: '0.75rem', color: '#888', background: '#000', padding: '1.2rem', borderRadius: '15px', lineHeight: '1.6', border: '1px solid #222' }}>
                 <p style={{ color: 'var(--primary)', fontWeight: 'bold', marginBottom: '0.6rem' }}>[개인정보 수집 및 마케팅 활용 안내]</p>
-                수집된 개인정보는 당첨 안내 및 가게 홍보 목적으로 활용될 수 있음에 동의하십니까? (보유기간: 1년)
+                수집된 개인정보는 <span style={{ color: '#ff4d4d', fontWeight: 'bold' }}>당첨 안내</span> 및 <span style={{ color: '#ff4d4d', fontWeight: 'bold' }}>가게 홍보 목적</span>으로 활용될 수 있음에 동의하십니까? (보유기간: 1년)
               </div>
               <label style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', fontSize: '0.95rem', color: '#fff', cursor: 'pointer', padding: '0.5rem 0' }}>
                 <input type="checkbox" checked={form.agreed} onChange={e => setForm({...form, agreed: e.target.checked})} style={{ width: '20px', height: '20px' }} />
                 위 내용을 확인했으며 동의합니다. (필수)
               </label>
-              <button type="submit" className="btn-primary" style={{ padding: '1.5rem', marginTop: '1rem' }}>룰렛 돌리기 시작</button>
+              <button type="submit" className="btn-primary" style={{ padding: '1.5rem', marginTop: '1rem' }}>추첨 시작하기</button>
               <button type="button" onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '1rem', cursor: 'pointer' }}>취소하기</button>
             </form>
           </div>
@@ -228,7 +218,20 @@ const RouletteGame = () => {
       )}
 
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes impact {
+          0% { transform: scale(0.5); opacity: 0; }
+          70% { transform: scale(1.05); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes slotScroll {
+          0% { transform: translateY(5px); opacity: 0.8; }
+          50% { transform: translateY(0); opacity: 1; }
+          100% { transform: translateY(-5px); opacity: 0.8; }
+        }
+        @keyframes twinkle {
+          0%, 100% { opacity: 1; transform: scale(1.2); }
+          50% { opacity: 0.3; transform: scale(0.8); }
+        }
       `}} />
     </div>
   );

@@ -1,15 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const Navbar = () => {
   const location = useLocation();
-  const isAdmin = location.search.includes('admin');
+  const [brandName, setBrandName] = useState('DINE EVENT');
+
+  useEffect(() => {
+    const fetchBrand = async () => {
+      try {
+        const homeDoc = await getDoc(doc(db, 'settings', 'home'));
+        if (homeDoc.exists() && homeDoc.data().brandName) {
+          setBrandName(homeDoc.data().brandName);
+        }
+      } catch (err) {
+        console.error("Navbar brand fetch error:", err);
+      }
+    };
+    fetchBrand();
+  }, []);
 
   return (
     <nav className="navbar" style={{ position: 'fixed', top: 0, width: '100%', padding: '0.8rem 1rem', zIndex: 1000, background: 'rgba(10,10,10,0.8)', backdropFilter: 'blur(10px)' }}>
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
         <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
-          <h2 style={{ color: 'var(--primary)', letterSpacing: '1px', fontSize: '1.1rem', margin: 0 }}>DINE EVENT</h2>
+          <h2 style={{ 
+            color: 'var(--primary)', 
+            letterSpacing: '1px', 
+            fontSize: '1.1rem', 
+            margin: 0,
+            textTransform: 'uppercase',
+            fontWeight: '900'
+          }}>
+            {brandName}
+          </h2>
         </Link>
         <div className="nav-links-scroll" style={{ 
           display: 'flex', 
