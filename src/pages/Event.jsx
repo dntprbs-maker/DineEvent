@@ -15,10 +15,11 @@ const Event = () => {
     }}>
       {!showGame ? (
         <div style={{ animation: 'fadeIn 0.8s ease-out', width: '100%', maxWidth: '500px' }}>
-          <div style={{ marginBottom: 'clamp(1.5rem, 6vw, 3rem)' }}>
+          <div style={{ marginBottom: 'clamp(2rem, 8vw, 4rem)' }}>
+            {/* 사용자의 요청에 따라 모든 효과 폐기, 심플한 네모 버튼으로 변경 */}
             <button 
               onClick={() => setShowGame(true)} 
-              className="btn-neon-gold" 
+              className="btn-simple-gold" 
             >
               행운의 추첨 시작하기
             </button>
@@ -28,18 +29,18 @@ const Event = () => {
             margin: '0 auto', 
             padding: 'clamp(1.2rem, 4vw, 2rem)', 
             textAlign: 'left', 
-            borderRadius: '25px',
-            border: '1px solid rgba(197, 160, 89, 0.15)',
+            borderRadius: '15px',
+            border: '1px solid rgba(197, 160, 89, 0.2)',
             width: '98%',
-            background: 'rgba(0,0,0,0.4)'
+            background: 'rgba(0,0,0,0.8)'
           }}>
             <h3 style={{ 
               color: 'var(--primary)', 
-              marginBottom: '1.2rem', 
+              marginBottom: '1rem', 
               display: 'flex', 
               alignItems: 'center', 
               gap: '8px', 
-              fontSize: 'clamp(0.95rem, 3.5vw, 1.15rem)', 
+              fontSize: '1rem', 
               fontWeight: '700'
             }}>
               📋 참여 가이드
@@ -48,17 +49,16 @@ const Event = () => {
               color: '#fff', 
               lineHeight: '1.7', 
               paddingLeft: '1.1rem', 
-              fontSize: 'clamp(0.75rem, 3vw, 0.9rem)', 
-              opacity: 0.85,
+              fontSize: '0.85rem', 
+              opacity: 0.8,
               margin: 0
             }}>
-              <li style={{ marginBottom: '0.6rem' }}>1인 1회 참여 가능하며, 현장 상황에 따라 제한될 수 있습니다.</li>
-              <li style={{ marginBottom: '0.6rem' }}>당첨 경품은 매장 카운터에서 당첨 화면 확인 후 즉시 지급됩니다.</li>
+              <li style={{ marginBottom: '0.5rem' }}>1인 1회 참여 가능하며, 현장 상황에 따라 제한될 수 있습니다.</li>
+              <li style={{ marginBottom: '0.5rem' }}>당첨 경품은 매장 카운터에서 당첨 화면 확인 후 즉시 지급됩니다.</li>
               <li>입력하신 정보는 이벤트 당첨 안내 및 마케팅 용도로 활용됩니다.</li>
             </ul>
           </div>
           
-          {/* 사용자의 요청에 따라 '메인 페이지로 돌아가기' 링크를 모든 화면에서 삭제했습니다. */}
           <div style={{ height: '6rem' }}></div>
         </div>
       ) : (
@@ -66,54 +66,45 @@ const Event = () => {
       )}
 
       <style dangerouslySetInnerHTML={{__html: `
-        .btn-neon-gold {
-          position: relative;
-          padding: clamp(1rem, 4vw, 1.5rem) clamp(2rem, 10vw, 4rem);
-          font-size: clamp(1.1rem, 4vw, 1.5rem);
-          font-weight: 900;
-          color: #ffd700;
-          background: transparent;
-          border: none;
-          border-radius: 50px;
+        .btn-simple-gold {
+          padding: 1.2rem 2rem;
+          font-size: 1.3rem;
+          font-weight: 800;
+          color: var(--primary);
+          background: #000;
+          border: 1px solid var(--primary);
+          border-radius: 4px; 
           cursor: pointer;
-          letter-spacing: 2px;
-          overflow: hidden;
-          width: auto;
-          max-width: 90%;
-          box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-          z-index: 1;
+          transition: all 0.2s ease;
+          width: 90%;
+          max-width: 400px;
+          letter-spacing: 1px;
+          white-space: nowrap; /* 줄바꿈 방지 */
         }
-        .btn-neon-gold::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: repeating-conic-gradient(
-            from 0deg,
-            transparent 0%,
-            transparent 12%,
-            rgba(255, 215, 0, 0.4) 18%,
-            #ffd700 20%
-          );
-          animation: spinNeon 3s linear infinite;
-          z-index: -2;
+
+        .btn-simple-gold:active {
+          background: var(--primary);
+          color: #000;
         }
-        .btn-neon-gold::after {
-          content: '';
-          position: absolute;
-          inset: 3px;
-          background: #0a0a0a;
-          border-radius: 50px;
-          z-index: -1;
+
+        /* 모바일 환경 전용: 글씨 크기 약 80% 축소 */
+        @media (max-width: 768px) {
+          .btn-simple-gold {
+            padding: 1rem 1.5rem;
+            font-size: 1.05rem; /* 기존 1.3rem의 약 80% */
+            width: 95%;
+          }
+          .glass h3 {
+            font-size: 0.85rem !important; /* 기존 1rem의 약 85% */
+          }
+          .glass ul li {
+            font-size: 0.75rem !important; /* 기존 0.85rem의 약 88% */
+            line-height: 1.5;
+          }
         }
-        @keyframes spinNeon {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
+
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(15px); }
+          from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}} />

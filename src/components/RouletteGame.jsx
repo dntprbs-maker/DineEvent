@@ -7,7 +7,7 @@ const RouletteGame = () => {
   const [result, setResult] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [prizes, setPrizes] = useState([]); 
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(true);
   const [form, setForm] = useState({ name: '', phone: '', agreed: false });
   const [slotText, setSlotText] = useState(""); 
   
@@ -190,28 +190,28 @@ const RouletteGame = () => {
       </div>
 
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(15px)' }}>
-          <div className="glass" style={{ padding: '3rem', width: '90%', maxWidth: '420px', border: '1px solid var(--primary)', borderRadius: '30px' }}>
-            <h3 style={{ color: 'var(--primary)', marginBottom: '2rem', textAlign: 'center', fontSize: '1.5rem' }}>이벤트 응모</h3>
-            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>닉네임</label>
-                <input type="text" placeholder="닉네임을 입력해주세요" className="glass-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required style={{ background: '#111', border: '1px solid #333', padding: '1.2rem', color: '#fff', borderRadius: '12px' }} />
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(15px)' }}>
+          <div className="glass modal-content" style={{ padding: '3rem', width: '90%', maxWidth: '420px', border: '1px solid var(--primary)', borderRadius: '30px' }}>
+            <h3 className="modal-title" style={{ color: 'var(--primary)', marginBottom: '2rem', textAlign: 'center', fontSize: '1.5rem' }}>이벤트 응모</h3>
+            <form onSubmit={handleFormSubmit} className="modal-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'left', width: '100%', paddingLeft: '0.2rem' }}>닉네임</label>
+                <input type="text" placeholder="닉네임을 입력해주세요" className="glass-input modal-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required style={{ background: '#111', border: '1px solid #333', padding: '1.2rem', color: '#fff', borderRadius: '12px', width: '100%' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>연락처</label>
-                <input type="tel" placeholder="010-0000-0000" className="glass-input" value={form.phone} onChange={handlePhoneChange} required style={{ background: '#111', border: '1px solid #333', padding: '1.2rem', color: '#fff', borderRadius: '12px' }} />
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'left', width: '100%', paddingLeft: '0.2rem' }}>연락처</label>
+                <input type="tel" placeholder="010-0000-0000" className="glass-input modal-input" value={form.phone} onChange={handlePhoneChange} required style={{ background: '#111', border: '1px solid #333', padding: '1.2rem', color: '#fff', borderRadius: '12px', width: '100%' }} />
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#888', background: '#000', padding: '1.2rem', borderRadius: '15px', lineHeight: '1.6', border: '1px solid #222' }}>
-                <p style={{ color: 'var(--primary)', fontWeight: 'bold', marginBottom: '0.6rem' }}>[개인정보 수집 및 마케팅 활용 안내]</p>
+              <div className="consent-box" style={{ fontSize: '0.75rem', color: '#888', background: '#000', padding: '1.2rem', borderRadius: '15px', lineHeight: '1.6', border: '1px solid #222', textAlign: 'left', wordBreak: 'keep-all' }}>
+                <p style={{ color: 'var(--primary)', fontWeight: 'bold', marginBottom: '0.6rem', textAlign: 'left' }}>[개인정보 수집 및 마케팅 활용 안내]</p>
                 수집된 개인정보는 <span style={{ color: '#ff4d4d', fontWeight: 'bold' }}>당첨 안내</span> 및 <span style={{ color: '#ff4d4d', fontWeight: 'bold' }}>가게 홍보 목적</span>으로 활용될 수 있음에 동의하십니까? (보유기간: 1년)
               </div>
-              <label style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', fontSize: '0.95rem', color: '#fff', cursor: 'pointer', padding: '0.5rem 0' }}>
+              <label className="agree-label" style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', fontSize: '0.95rem', color: '#fff', cursor: 'pointer', padding: '0.5rem 0' }}>
                 <input type="checkbox" checked={form.agreed} onChange={e => setForm({...form, agreed: e.target.checked})} style={{ width: '20px', height: '20px' }} />
                 위 내용을 확인했으며 동의합니다. (필수)
               </label>
-              <button type="submit" className="btn-primary" style={{ padding: '1.5rem', marginTop: '1rem' }}>추첨 시작하기</button>
-              <button type="button" onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '1rem', cursor: 'pointer' }}>취소하기</button>
+              <button type="submit" className="btn-primary modal-submit-btn" style={{ padding: '1rem', marginTop: '1rem', width: '60%', alignSelf: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>추첨 시작하기</button>
+              <button type="button" className="modal-cancel-btn" onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '1rem', cursor: 'pointer' }}>취소하기</button>
             </form>
           </div>
         </div>
@@ -231,6 +231,35 @@ const RouletteGame = () => {
         @keyframes twinkle {
           0%, 100% { opacity: 1; transform: scale(1.2); }
           50% { opacity: 0.3; transform: scale(0.8); }
+        }
+
+        /* 모바일 응모 모달 최적화 (80% 축소 및 간격/정렬 정밀 조정) */
+        @media (max-width: 768px) {
+          .modal-content { padding: 1.5rem !important; border-radius: 20px !important; }
+          .modal-title { font-size: 1.1rem !important; margin-bottom: 0.8rem !important; }
+          .modal-form { gap: 0.6rem !important; align-items: stretch !important; } 
+          .form-group { gap: 0.2rem !important; align-items: flex-start !important; } /* 라벨 좌측 정렬 */
+          .form-label { font-size: 0.7rem !important; margin-bottom: 0 !important; text-align: left !important; width: 100% !important; padding-left: 0.2rem !important; }
+          .modal-input { padding: 0.7rem !important; font-size: 0.85rem !important; width: 100% !important; }
+          .consent-box { 
+            padding: 0.7rem !important; 
+            font-size: 0.6rem !important; 
+            line-height: 1.1 !important; 
+            text-align: left !important; 
+            word-break: keep-all !important; 
+          }
+          .consent-box p { margin-bottom: 0.2rem !important; text-align: left !important; }
+          .agree-label { font-size: 0.75rem !important; padding: 0.2rem 0 !important; gap: 0.4rem !important; justify-content: flex-start !important; }
+          .agree-label input { width: 16px !important; height: 16px !important; }
+          .modal-submit-btn { 
+            width: 60% !important; /* 좌우 크기 절반 수준으로 축소 (가독성 위해 60% 설정) */
+            padding: 0.7rem !important; /* 상하 크기 2/3 수준 (기존 1rem 대비) */
+            font-size: 0.9rem !important; 
+            margin: 0.5rem auto 0 auto !important; /* 중앙 정렬 및 여백 */
+            display: block !important;
+            border-radius: 30px !important;
+          }
+          .modal-cancel-btn { font-size: 0.7rem !important; margin-top: 0.3rem !important; }
         }
       `}} />
     </div>
