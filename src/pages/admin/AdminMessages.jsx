@@ -67,7 +67,6 @@ const AdminMessages = () => {
     <div className="glass" style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h3 style={{ color: 'var(--primary)' }}>📋 고객 응모 내역 (Cloud)</h3>
-        <button onClick={clearAll} style={{ background: 'transparent', border: '1px solid #444', color: '#ff4444', padding: '0.5rem 1rem', borderRadius: '8px' }}>내역 비우기</button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '3rem' }}>

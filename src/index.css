@@ -77,7 +77,6 @@ h3 {
 
 /* Base Primary Button Override */
 .btn-primary {
-  composes: premium-gold-button;
   background: linear-gradient(135deg, #fceabb 0%, #fccd4d 40%, #f8b500 50%, #fccd4d 60%, #fbdf93 100%);
   color: #000;
   padding: 1rem 2.5rem;
@@ -87,15 +86,23 @@ h3 {
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  text-decoration: none;
+  font-family: inherit;
 }
 
 .btn-primary:hover {
   transform: translateY(-5px) scale(1.05);
   box-shadow: 0 20px 40px rgba(255, 215, 0, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: translateY(-2px) scale(0.98);
 }
 
 /* Responsive Design */
@@ -334,7 +341,10 @@ h3 {
 
 @media (max-width: 768px) {
   .admin-layout-wrapper {
-    padding: 1.5rem 1rem !important;
+    padding-left: 1rem !important;    /* 좌우 패딩은 CSS에서 유지 */
+    padding-right: 1rem !important;
+    padding-bottom: 1rem !important;
+    /* padding-top은 AdminLayout 인라인 스타일이 담당 */
   }
 
   .admin-card-glass {
@@ -359,7 +369,7 @@ h3 {
 /* --- Mobile Premium Admin UI --- */
 @media (max-width: 768px) {
   .admin-content-inner {
-    padding-top: 1rem;
+    padding-top: 0;  /* AdminLayout wrapper의 paddingTop: 120px이 헤더 공간을 담당 */
   }
 
   .mobile-input {
@@ -401,8 +411,10 @@ h3 {
 
 /* --- Entry History Premium UI --- */
 .entry-search-wrapper {
+  /* fixed: body의 overflow-x:hidden 때문에 sticky 미작동 → fixed로 유지
+     top을 실제 모바일 헤더 높이(130px)로 정확히 설정 */
   position: fixed;
-  top: 88px;
+  top: 130px;           /* 헤더 실제 높이(130px) 바로 아래에 고정 */
   left: 0.8rem;
   right: 0.8rem;
   z-index: 500;
@@ -414,20 +426,6 @@ h3 {
   align-items: center;
   gap: 12px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
-}
-
-/* 상단 차단 마스크 레이어 */
-.entry-search-wrapper::before {
-  content: "";
-  position: absolute;
-  top: -98px;
-  /* 88px 지점 위쪽의 모든 틈새를 철저히 차단 */
-  left: -20px;
-  right: -20px;
-  height: 100px;
-  background: #050505;
-  z-index: -1;
-  pointer-events: none;
 }
 
 .entry-search-wrapper input {

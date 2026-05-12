@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminInfo from '../../components/admin/MobileAdminInfo';
+import AdminNotice from './AdminNotice';
 import { db, storage } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -15,6 +16,11 @@ const AdminInfo = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
+  
+  const heroInputRef = useRef(null);
+  const menu1InputRef = useRef(null);
+  const menu2InputRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,7 +30,10 @@ const AdminInfo = () => {
         const menuDoc = await getDoc(doc(db, 'content', 'menu_image'));
         const hData = homeDoc.exists() ? homeDoc.data() : homeSettings;
         const lData = locDoc.exists() ? locDoc.data() : locationSettings;
-        const mData = menuDoc.exists() ? { image1: menuDoc.data().image1 || menuDoc.data().imageUrl || '', image2: menuDoc.data().image2 || '' } : menuImages;
+        const mData = menuDoc.exists() ? { 
+          image1: menuDoc.data().image1 ?? menuDoc.data().imageUrl ?? '', 
+          image2: menuDoc.data().image2 ?? '' 
+        } : menuImages;
         setHomeSettings(hData);
         setLocationSettings(lData);
         setMenuImages(mData);
@@ -112,7 +121,7 @@ const AdminInfo = () => {
     try {
       const base64Image = await compressImage(file);
 
-      if (type === 'hero') setHomeSettings({...homeSettings, heroImage: base64Image});
+      if (type === 'hero') setHomeSettings(prev => ({...prev, heroImage: base64Image}));
       else if (type === 'menu1') setMenuImages(prev => ({...prev, image1: base64Image}));
       else if (type === 'menu2') setMenuImages(prev => ({...prev, image2: base64Image}));
     } catch (err) {
@@ -120,6 +129,8 @@ const AdminInfo = () => {
       alert('이미지 처리 실패: ' + err.message);
     }
   };
+
+
 
   const isMobile = useIsMobile(768);
 
@@ -197,37 +208,58 @@ const AdminInfo = () => {
       )}
 
       <div className="glass admin-card-glass">
-        <h3 style={{ marginBottom: '2.5rem', color: 'var(--primary)', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>🏠 식당 관리</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>
+          <h3 style={{ color: 'var(--primary)', margin: 0 }}>🏠 식당 관리</h3>
+          <button 
+            onClick={() => setShowNoticeModal(true)}
+            className="premium-gold-button"
+            style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontSize: '0.9rem' }}
+          >
+            공지사항
+          </button>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <h4 style={{ color: 'var(--primary)', borderBottom: '1px solid #222', paddingBottom: '0.5rem', fontSize: '1rem' }}>기본 정보 & 이미지</h4>
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>🚩 매장 이름</label>
-              <input type="text" value={homeSettings.brandName} onChange={(e) => setHomeSettings({...homeSettings, brandName: e.target.value})} style={{ width: '100%', background: '#111', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
+              <input type="text" value={homeSettings.brandName} onChange={(e) => setHomeSettings(prev => ({...prev, brandName: e.target.value}))} style={{ width: '100%', background: '#111', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
             </div>
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>📍 매장 주소</label>
-              <input type="text" value={locationSettings.address} onChange={(e) => setLocationSettings({address: e.target.value})} style={{ width: '100%', background: '#111', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
+              <input type="text" value={locationSettings.address} onChange={(e) => setLocationSettings(prev => ({...prev, address: e.target.value}))} style={{ width: '100%', background: '#111', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
             </div>
             <div style={{ marginTop: '0.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>🖼️ 메인 배경 이미지</label>
               <div className="file-input-wrapper">
-                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'hero')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
-                {homeSettings.heroImage && <img src={homeSettings.heroImage} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />}
+                <input type="file" ref={heroInputRef} accept="image/*" onChange={(e) => handleImageUpload(e, 'hero')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
+                {homeSettings.heroImage && (
+                  <div style={{ position: 'relative', display: 'flex' }}>
+                    <img src={homeSettings.heroImage} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />
+                  </div>
+                )}
               </div>
             </div>
             <div style={{ marginTop: '0.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>🍴 메뉴 이미지 1 (메인)</label>
               <div className="file-input-wrapper" style={{ border: '1px dashed var(--primary)' }}>
-                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'menu1')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
-                {menuImages.image1 && <img src={menuImages.image1} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />}
+                <input type="file" ref={menu1InputRef} accept="image/*" onChange={(e) => handleImageUpload(e, 'menu1')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
+                {menuImages.image1 && (
+                  <div style={{ position: 'relative', display: 'flex' }}>
+                    <img src={menuImages.image1} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />
+                  </div>
+                )}
               </div>
             </div>
             <div style={{ marginTop: '0.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>🍴 메뉴 이미지 2 (추가)</label>
               <div className="file-input-wrapper" style={{ border: '1px dashed var(--primary)' }}>
-                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'menu2')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
-                {menuImages.image2 && <img src={menuImages.image2} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />}
+                <input type="file" ref={menu2InputRef} accept="image/*" onChange={(e) => handleImageUpload(e, 'menu2')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
+                {menuImages.image2 && (
+                  <div style={{ position: 'relative', display: 'flex' }}>
+                    <img src={menuImages.image2} alt="" style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '5px' }} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -235,15 +267,15 @@ const AdminInfo = () => {
             <h4 style={{ color: 'var(--primary)', borderBottom: '1px solid #222', paddingBottom: '0.5rem', fontSize: '1rem' }}>홈 화면 문구 설정</h4>
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>✨ 상단 강조 문구</label>
-              <input type="text" value={homeSettings.topLabel} onChange={(e) => setHomeSettings({...homeSettings, topLabel: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
+              <input type="text" value={homeSettings.topLabel} onChange={(e) => setHomeSettings(prev => ({...prev, topLabel: e.target.value}))} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
             </div>
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>메인 대제목</label>
-              <textarea value={homeSettings.title} onChange={(e) => setHomeSettings({...homeSettings, title: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px', height: '70px', resize: 'none' }} />
+              <textarea value={homeSettings.title} onChange={(e) => setHomeSettings(prev => ({...prev, title: e.target.value}))} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px', height: '70px', resize: 'none' }} />
             </div>
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>메인 소제목</label>
-              <textarea value={homeSettings.subtitle} onChange={(e) => setHomeSettings({...homeSettings, subtitle: e.target.value})} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px', height: '100px', resize: 'none' }} />
+              <textarea value={homeSettings.subtitle} onChange={(e) => setHomeSettings(prev => ({...prev, subtitle: e.target.value}))} style={{ width: '100%', background: '#000', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px', height: '100px', resize: 'none' }} />
             </div>
           </div>
         </div>
@@ -261,9 +293,64 @@ const AdminInfo = () => {
         </div>
       )}
 
+      {/* 공지사항 팝업 - 반투명 배경 + 중앙 팝업 창 */}
+      {showNoticeModal && (
+        // 바깥 클릭 시 팝업 닫기 (반투명 오버레이)
+        <div
+          onClick={() => setShowNoticeModal(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.6)', // 배경 투명도 낮춤 → 뒤 화면이 살짝 보임
+            backdropFilter: 'blur(6px)',
+            zIndex: 999999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem'
+          }}
+        >
+          {/* 팝업 창 본체 - 클릭 이벤트 전파 차단 */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '547px', // 820px의 2/3
+              maxHeight: '60vh',                 // 90vh의 2/3
+              overflowY: 'auto',                 // 내용이 길면 팝업 내부에서 스크롤
+              background: '#0d0d0d',
+              borderRadius: '24px',
+              border: '1px solid rgba(197, 160, 89, 0.35)',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.8)',
+              position: 'relative',
+              padding: '1.5rem 1.5rem 2rem',
+              animation: 'popupFadeIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          >
+            {/* 닫기 버튼 */}
+            <button
+              onClick={() => setShowNoticeModal(false)}
+              style={{
+                position: 'sticky', top: 0, float: 'right',
+                background: 'rgba(255,255,255,0.07)', border: '1px solid #333',
+                color: '#fff', fontSize: '1.2rem', cursor: 'pointer',
+                width: '32px', height: '32px', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '0.5rem', zIndex: 10, flexShrink: 0
+              }}
+            >
+              ✕
+            </button>
+            <AdminNotice onClose={() => setShowNoticeModal(false)} />
+          </div>
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes popupFadeIn {
+              from { opacity: 0; transform: scale(0.93) translateY(12px); }
+              to   { opacity: 1; transform: scale(1)    translateY(0); }
+            }
+          `}} />
+        </div>
+      )}
+
       {/* 빌드 버전 표시 (최신 배포 확인용) */}
       <div style={{ position: 'fixed', bottom: '5px', left: '10px', fontSize: '10px', color: '#333', zIndex: 9999, pointerEvents: 'none' }}>
-        v1.0.1 - Latest Patch
+        v1.1.0 - Notice Update
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `

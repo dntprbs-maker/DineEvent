@@ -69,22 +69,28 @@ const Event = () => {
         .btn-simple-gold {
           padding: 1.2rem 2rem;
           font-size: 1.3rem;
-          font-weight: 800;
-          color: var(--primary);
-          background: #000;
-          border: 1px solid var(--primary);
-          border-radius: 4px; 
+          font-weight: 900;
+          color: #000;
+          background: linear-gradient(135deg, #fceabb 0%, #fccd4d 40%, #f8b500 50%, #fccd4d 60%, #fbdf93 100%);
+          border: 1px solid #ffeb3b;
+          border-radius: 50px; 
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           width: 90%;
           max-width: 400px;
           letter-spacing: 1px;
-          white-space: nowrap; /* 줄바꿈 방지 */
+          white-space: nowrap;
+          box-shadow: 0 0 25px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-simple-gold:hover {
+          transform: translateY(-5px) scale(1.03);
+          box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5);
+          filter: brightness(1.1);
         }
 
         .btn-simple-gold:active {
-          background: var(--primary);
-          color: #000;
+          transform: translateY(-2px) scale(0.98);
         }
 
         /* 모바일 환경 전용: 글씨 크기 약 80% 축소 */

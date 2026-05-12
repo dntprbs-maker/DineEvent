@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -10,6 +11,7 @@ const RouletteGame = () => {
   const [showModal, setShowModal] = useState(true);
   const [form, setForm] = useState({ name: '', phone: '', agreed: false });
   const [slotText, setSlotText] = useState(""); 
+  const navigate = useNavigate();
   
   const isLockedRef = useRef(false); 
 
@@ -127,37 +129,76 @@ const RouletteGame = () => {
   if (prizes.length === 0) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--primary)' }}>데이터 로딩 중...</div>;
 
   return (
-    <div className="roulette-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', width: '100%', minHeight: '400px', justifyContent: 'center' }}>
+    <div className="roulette-section" style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      gap: '2rem', 
+      width: '100%', 
+      minHeight: '400px', 
+      justifyContent: submitted ? 'flex-start' : 'center',
+      paddingTop: submitted ? '2rem' : '0'
+    }}>
       
       <div style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         
         {submitted && !isSpinning && (
           <div className="result-card fade-in" style={{ 
-            padding: '4rem 2rem', borderRadius: '30px', 
+            /* 패딩을 반응형으로: 좁은 폰에서도 내부 여백 확보 */
+            padding: 'clamp(1.5rem, 5vw, 4rem) clamp(1rem, 4vw, 2rem)', borderRadius: '30px', 
             background: `linear-gradient(135deg, ${result?.includes('꽝') ? 'rgba(255, 50, 50, 0.15)' : 'rgba(197, 160, 89, 0.2)'}, rgba(0,0,0,0.9))`, 
             border: `3px solid ${result?.includes('꽝') ? '#ff4d4d' : 'var(--primary)'}`, textAlign: 'center',
             boxShadow: `0 0 60px ${result?.includes('꽝') ? 'rgba(255, 50, 50, 0.4)' : 'rgba(197, 160, 89, 0.5)'}`,
             animation: 'impact 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49)',
             position: 'relative', overflow: 'hidden'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-              <span style={{ fontSize: '1.8rem', animation: 'twinkle 1s infinite' }}>{result?.includes('꽝') ? '💦' : '✨'}</span>
-              <h3 style={{ fontSize: '1.8rem', color: result?.includes('꽝') ? '#ff4d4d' : 'var(--primary)', fontWeight: '900', letterSpacing: '2px' }}>
-                {result?.includes('꽝') ? '아쉽네요' : '축하합니다!'}
-              </h3>
-              <span style={{ fontSize: '1.8rem', animation: 'twinkle 1s infinite alternate' }}>{result?.includes('꽝') ? '💦' : '✨'}</span>
+            {/* 축하/아쉽 배너: SVG 이미지로 처리 → 줄바꿈 문제 완전 해결
+                SVG는 크기가 정확히 제어되어 절대 깨지지 않음 */}
+            <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+              <img 
+                src={result?.includes('꽝') ? '/consolation_banner.svg' : '/congratulations_banner.svg'}
+                alt={result?.includes('꽝') ? '아쉽네요' : '축하합니다!'}
+                style={{ 
+                  width: '100%',        /* 컨테이너 너비에 맞게 자동 조절 */
+                  maxWidth: '400px',    /* 최대 너비 제한 */
+                  height: 'auto',       /* 비율 유지 */
+                  display: 'block',
+                  margin: '0 auto'
+                }}
+              />
             </div>
-            <div style={{ position: 'relative', display: 'inline-block' }}>
+            {/* 경품명: inline-block → block 변경해야 word-break:keep-all이 정상 작동 */}
+            <div style={{ position: 'relative', width: '100%', textAlign: 'center' }}>
               <p style={{ 
                 color: '#fff', 
-                fontSize: 'clamp(2rem, 8vw, 3.5rem)', 
+                /* 최솟값 2rem → 1.4rem: 좁은 화면에서 글자가 더 작아져서 한 줄에 들어옴 */
+                fontSize: 'clamp(1.4rem, 7vw, 3.5rem)', 
                 fontWeight: '900', 
                 textShadow: `0 0 20px ${result?.includes('꽝') ? 'rgba(255, 77, 77, 0.8)' : 'rgba(255, 255, 255, 0.8)'}, 0 0 40px ${result?.includes('꽝') ? 'rgba(255, 77, 77, 0.4)' : 'rgba(197, 160, 89, 0.6)'}`,
                 lineHeight: '1.3',
-                wordBreak: 'keep-all'
+                wordBreak: 'keep-all'   /* 공백 기준으로만 줄바꿈: 어절 중간 절대 안 자름 */
               }}>
                 {result}
               </p>
+            </div>
+            {/* 직원확인 버튼: 플로팅 스타일 적용 */}
+            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <button 
+                className="btn-primary float-btn" 
+                onClick={() => {
+                  alert('직원 확인이 완료되었습니다. 감사합니다!');
+                  navigate('/');
+                }}
+                style={{ 
+                  padding: '0.6rem 1.8rem', 
+                  borderRadius: '50px', 
+                  fontSize: '0.9rem',
+                  boxShadow: '0 10px 25px rgba(197, 160, 89, 0.4)',
+                  animation: 'floatingBtn 3s ease-in-out infinite'
+                }}
+              >
+                직원확인
+              </button>
             </div>
           </div>
         )}
@@ -169,7 +210,8 @@ const RouletteGame = () => {
         {isSpinning && (
           <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '30px', border: '1px dashed var(--primary)' }}>
             <div style={{ height: '80px', overflow: 'hidden', marginBottom: '2rem' }}>
-              <p style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--primary)', animation: 'slotScroll 0.1s infinite linear' }}>
+              {/* 슬롯 애니메이션 텍스트도 clamp로 반응형 적용 */}
+              <p style={{ fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', fontWeight: '800', color: 'var(--primary)', animation: 'slotScroll 0.1s infinite linear', wordBreak: 'keep-all' }}>
                 {slotText}
               </p>
             </div>
@@ -218,6 +260,25 @@ const RouletteGame = () => {
       )}
 
       <style dangerouslySetInnerHTML={{__html: `
+        /* 공통 프리미엄 골드 버튼 스타일 */
+        .btn-primary {
+          background: linear-gradient(135deg, #fceabb 0%, #fccd4d 40%, #f8b500 50%, #fccd4d 60%, #fbdf93 100%) !important;
+          color: #000 !important;
+          border: 1px solid #ffeb3b !important;
+          font-weight: 900 !important;
+          box-shadow: 0 0 25px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+          cursor: pointer;
+        }
+        .btn-primary:hover {
+          transform: translateY(-5px) scale(1.03) !important;
+          box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5) !important;
+          filter: brightness(1.1) !important;
+        }
+        .btn-primary:active {
+          transform: translateY(-2px) scale(0.98) !important;
+        }
+
         @keyframes impact {
           0% { transform: scale(0.5); opacity: 0; }
           70% { transform: scale(1.05); }
@@ -231,6 +292,11 @@ const RouletteGame = () => {
         @keyframes twinkle {
           0%, 100% { opacity: 1; transform: scale(1.2); }
           50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        @keyframes floatingBtn {
+          0% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0); }
         }
 
         /* 모바일 응모 모달 최적화 (80% 축소 및 간격/정렬 정밀 조정) */

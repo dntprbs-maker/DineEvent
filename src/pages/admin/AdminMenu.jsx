@@ -57,6 +57,8 @@ const AdminMenu = () => {
     });
   };
 
+
+
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -80,6 +82,7 @@ const AdminMenu = () => {
       alert('업로드 실패: ' + err.message);
     } finally {
       setUploading(false);
+      // 입력창 초기화 (동일 파일 재업로드 가능하게 함)
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -116,7 +119,7 @@ const AdminMenu = () => {
           </div>
 
           {menuImageUrl && (
-            <div className="glass" style={{ padding: '2rem', borderRadius: '25px', background: 'rgba(0,0,0,0.3)' }}>
+            <div className="glass" style={{ padding: '2rem', borderRadius: '25px', background: 'rgba(0,0,0,0.3)', position: 'relative' }}>
               <div style={{ width: '100%', minHeight: '300px', background: '#000', borderRadius: '20px', border: '1px dashed #444', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 <img src={menuImageUrl} alt="Current Menu" style={{ maxWidth: '100%', height: 'auto' }} />
               </div>

@@ -21,6 +21,7 @@ import AdminInfo from './pages/admin/AdminInfo'
 // import AdminMenu from './pages/admin/AdminMenu' // [삭제] 사용자 요청에 따라 제외
 import AdminEvent from './pages/admin/AdminEvent'
 import AdminMessages from './pages/admin/AdminMessages'
+import AdminNoticeManager from './pages/admin/AdminNoticeManager' // [NEW] 공지 관리 센터 임포트
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -131,7 +132,7 @@ const RootLayout = () => {
         <ScrollToTop />
         <GlobalStyle />
         <Navbar />
-        <main style={{ paddingTop: '80px' }}>
+        <main style={{ paddingTop: '60px' }}>
           <Outlet />
         </main>
         <footer className="app-footer" style={{ padding: '4rem 2rem', textAlign: 'center', borderTop: '1px solid #111', background: '#000' }}>
@@ -189,6 +190,7 @@ const router = createBrowserRouter([
       // { path: "menu", element: <AdminMenu /> }, // [제거]
       { path: "event", element: <AdminEvent /> },
       { path: "messages", element: <AdminMessages /> },
+      { path: "notice-manager", element: <AdminNoticeManager /> }, // [NEW] 공지 관리 센터 경로 추가
     ]
   }
 ]);

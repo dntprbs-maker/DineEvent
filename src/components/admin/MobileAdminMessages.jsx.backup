@@ -22,59 +22,21 @@ const MobileAdminMessages = ({
     <div className="mobile-admin-container" style={{ padding: '0 0.8rem 180px 0.8rem', animation: 'fadeIn 0.5s ease-out' }}>
       
 
-      {/* 문자 템플릿 편집기 - 화면 중앙 팝업 모달 */}
+      {/* 문자 템플릿 편집기 (접이식) */}
       {showSmsEditor && (
-        <div style={{ 
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
-          zIndex: 1000000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '2rem'
-        }}>
-          <div style={{ 
-            background: '#111', border: '1px solid var(--primary)',
-            borderRadius: '24px', padding: '2rem 1.5rem',
-            width: '100%', maxWidth: '420px',
-            boxShadow: '0 30px 80px rgba(0,0,0,0.8)'
-          }}>
-            {/* 모달 헤더 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-              <label style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: '800' }}>
-                💬 이벤트 문자 템플릿
-              </label>
-              {/* 닫기 버튼 */}
-              <button 
-                onClick={() => setShowSmsEditor(false)}
-                style={{ background: 'none', border: 'none', color: '#666', fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}
-              >×</button>
-            </div>
-            {/* 문자 내용 입력 */}
-            <textarea 
-              value={smsTemplate} 
-              onChange={(e) => setSmsTemplate(e.target.value)} 
-              placeholder="전송할 문자 내용을 입력하세요..."
-              style={{ 
-                width: '100%', height: '120px', background: '#000',
-                border: '1px solid #333', borderRadius: '12px',
-                padding: '1rem', color: '#fff', fontSize: '0.9rem',
-                outline: 'none', resize: 'none'
-              }}
-            />
-            <p style={{ color: '#555', fontSize: '0.75rem', marginTop: '0.6rem' }}>
-              ※ 현재 {uniqueData.length}명의 고객에게 발송됩니다.
-            </p>
-            {/* 확인 버튼 */}
-            <button
-              onClick={() => setShowSmsEditor(false)}
-              className="premium-gold-button"
-              style={{ width: '50%', marginTop: '1rem', padding: '0.8rem', display: 'block', margin: '1rem auto 0' }}
-            >
-              적용
-            </button>
-          </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197,160,89,0.3)', borderRadius: '20px', padding: '1.2rem', marginBottom: '1.5rem', animation: 'fadeInDown 0.3s ease-out' }}>
+          <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: '800', display: 'block', marginBottom: '0.8rem' }}>💬 이벤트 문자 템플릿</label>
+          <textarea 
+            value={smsTemplate} 
+            onChange={(e) => setSmsTemplate(e.target.value)} 
+            placeholder="전송할 문자 내용을 입력하세요..."
+            style={{ width: '100%', height: '80px', background: '#000', border: '1px solid #333', borderRadius: '12px', padding: '1rem', color: '#fff', fontSize: '0.9rem', outline: 'none', resize: 'none' }}
+          />
+          <p style={{ color: '#555', fontSize: '0.7rem', marginTop: '0.5rem' }}>※ 현재 {uniqueData.length}명의 고객에게 발송됩니다.</p>
         </div>
       )}
 
-      {/* 스마트 검색창 - sticky로 변경되어 별도 marginTop 불필요 */}
+      {/* 스마트 검색창 */}
       <div className="entry-search-wrapper">
         <span style={{ fontSize: '1.1rem', opacity: 0.5 }}>🔍</span>
         <input 
@@ -88,8 +50,8 @@ const MobileAdminMessages = ({
         )}
       </div>
 
-      {/* 응모 내역 슬림 리스트 - fixed 검색창(55px) + 여백 = 65px 만큼 아래로 내림 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '65px' }}>
+      {/* 응모 내역 슬림 리스트 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {filteredEntries.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '5rem 0', color: '#333', fontStyle: 'italic' }}>
             {searchTerm ? '검색 결과가 없습니다.' : '내역이 존재하지 않습니다.'}
@@ -152,9 +114,9 @@ const MobileAdminMessages = ({
         <div className="dual-floating-group">
           <button 
             className="premium-gold-button"
-            onClick={() => setShowSmsEditor(!showSmsEditor)}
+            onClick={() => setShowDeleteConfirm(true)}
           >
-            📝 문자내용수정
+            🗑️ 응모내역삭제
           </button>
           <button 
             className="premium-gold-button"

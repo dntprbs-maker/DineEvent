@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import AdminNotice from '../../pages/admin/AdminNotice';
 
 const MobileAdminInfo = ({ 
   homeSettings, setHomeSettings, 
   locationSettings, setLocationSettings, 
-  menuImages, handleImageUpload, 
+  menuImages, handleImageUpload,
   handleSave, saving 
 }) => {
   const [activeModal, setActiveModal] = useState(null); 
@@ -20,6 +21,7 @@ const MobileAdminInfo = ({
     { id: 'topLabel', label: '강조 문구', icon: '✨' },
     { id: 'title', label: '대제목', icon: '📢' },
     { id: 'subtitle', label: '소제목', icon: '📝' },
+    // { id: 'notice', label: '공지사항', icon: '🔔' }, // 기존 방식 주석 처리
   ];
 
   const closeModal = () => setActiveModal(null);
@@ -41,13 +43,77 @@ const MobileAdminInfo = ({
       <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {leftItems.map(renderButton)}
+          {/* [방안 A] 우측 저장 버튼에 가려지지 않도록 좌측 열 하단에 배치 */}
+          <div 
+            className="mockup-style-button" 
+            onClick={() => setActiveModal('notice')}
+            style={{ border: '1px solid var(--primary)', background: 'rgba(197, 160, 89, 0.1)' }} 
+          >
+            <span className="mockup-icon">🔔</span>
+            <span className="mockup-label">공지사항</span>
+          </div>
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {rightItems.map(renderButton)}
         </div>
       </div>
 
-      {activeModal && (
+      {/* 공지사항 전용 중앙 팝업 (PC와 동일한 방식) */}
+      {activeModal === 'notice' && (
+        <div
+          onClick={closeModal}
+          style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem'
+          }}
+        >
+          {/* 팝업 본체 - 클릭 이벤트 전파 차단 */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '69%',          // 92%의 3/4
+              maxHeight: '56vh',     // 75vh의 3/4
+              overflowY: 'auto',
+              background: '#0d0d0d',
+              borderRadius: '20px',
+              border: '1px solid rgba(197, 160, 89, 0.35)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+              position: 'relative',
+              padding: '1rem 1rem 1.5rem',
+              animation: 'popupFadeInMobile 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          >
+            {/* 닫기 버튼 */}
+            <button
+              onClick={closeModal}
+              style={{
+                float: 'right',
+                background: 'rgba(255,255,255,0.07)', border: '1px solid #333',
+                color: '#fff', fontSize: '1rem', cursor: 'pointer',
+                width: '28px', height: '28px', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '0.3rem'
+              }}
+            >
+              ✕
+            </button>
+            <AdminNotice onClose={closeModal} compact={true} />
+          </div>
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes popupFadeInMobile {
+              from { opacity: 0; transform: scale(0.92) translateY(16px); }
+              to   { opacity: 1; transform: scale(1)    translateY(0); }
+            }
+          `}} />
+        </div>
+      )}
+
+      {/* 공지사항 외 항목 - 기존 바텀시트 방식 유지 */}
+      {activeModal && activeModal !== 'notice' && (
         <>
           <div className="modal-overlay" onClick={closeModal} />
           <div className="bottom-sheet">
@@ -68,19 +134,31 @@ const MobileAdminInfo = ({
                   {activeModal === 'heroImage' && (
                     <div className="image-upload-zone">
                       <input type="file" accept="image/*" onChange={(e) => { handleImageUpload(e, 'hero'); closeModal(); }} />
-                      {homeSettings.heroImage && <img src={homeSettings.heroImage} alt="" className="preview-img" />}
+                      {homeSettings.heroImage && (
+                        <div style={{ position: 'relative' }}>
+                          <img src={homeSettings.heroImage} alt="" className="preview-img" />
+                        </div>
+                      )}
                     </div>
                   )}
                   {activeModal === 'menu1' && (
                     <div className="image-upload-zone">
                       <input type="file" accept="image/*" onChange={(e) => { handleImageUpload(e, 'menu1'); closeModal(); }} />
-                      {menuImages.image1 && <img src={menuImages.image1} alt="" className="preview-img" />}
+                      {menuImages.image1 && (
+                        <div style={{ position: 'relative' }}>
+                          <img src={menuImages.image1} alt="" className="preview-img" />
+                        </div>
+                      )}
                     </div>
                   )}
                   {activeModal === 'menu2' && (
                     <div className="image-upload-zone">
                       <input type="file" accept="image/*" onChange={(e) => { handleImageUpload(e, 'menu2'); closeModal(); }} />
-                      {menuImages.image2 && <img src={menuImages.image2} alt="" className="preview-img" />}
+                      {menuImages.image2 && (
+                        <div style={{ position: 'relative' }}>
+                          <img src={menuImages.image2} alt="" className="preview-img" />
+                        </div>
+                      )}
                     </div>
                   )}
                   {activeModal === 'topLabel' && (
@@ -128,7 +206,7 @@ const MobileAdminInfo = ({
         .mockup-label { color: #fff; font-size: 0.85rem; font-weight: 700; letter-spacing: -0.5px; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 2000; animation: fadeIn 0.3s ease; }
-        .bottom-sheet { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f0f0f; border-radius: 25px 25px 0 0; z-index: 2001; padding: 1rem 1rem 3rem 1rem; box-shadow: 0 -10px 50px rgba(0,0,0,1); animation: slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1); border-top: 1px solid rgba(197, 160, 89, 0.3); }
+        .bottom-sheet { position: fixed; bottom: 0; left: 0; width: 100%; max-height: 92vh; overflow-y: auto; background: #0f0f0f; border-radius: 25px 25px 0 0; z-index: 2001; padding: 1rem 1rem 3rem 1rem; box-shadow: 0 -10px 50px rgba(0,0,0,1); animation: slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1); border-top: 1px solid rgba(197, 160, 89, 0.3); }
         .sheet-handle { width: 40px; height: 4px; background: #333; border-radius: 10px; margin: 0 auto 1.5rem auto; }
         .modal-title { color: var(--primary); margin-bottom: 1.5rem; font-size: 1.1rem; text-align: center; font-weight: 900; }
         .input-group input, .input-group textarea { width: 100%; background: #000; border: 1px solid #222; border-radius: 12px; padding: 1.1rem; color: #fff; font-size: 1rem; outline: none; }

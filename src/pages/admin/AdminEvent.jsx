@@ -228,9 +228,9 @@ const AdminEvent = () => {
             onClick={() => setShowResetConfirm(true)} 
             disabled={saving} 
             className="premium-gold-button"
-            style={{ background: '#000', color: 'var(--primary)', padding: '1.2rem 2.5rem', border: '1px solid var(--primary)', borderRadius: '50px', fontSize: '1rem', boxShadow: 'none' }}
+            style={{ padding: '1.2rem 2.5rem', borderRadius: '50px', fontSize: '1rem' }}
           >
-            ✨ 이벤트 초기화
+            ✨ 새 이벤트 만들기
           </button>
           
           <button 

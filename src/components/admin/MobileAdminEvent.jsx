@@ -34,7 +34,7 @@ const MobileAdminEvent = ({
             className="mockup-btn-extreme-gold" 
             onClick={() => setIsSetupMode(true)}
           >
-            <span className="btn-label">이벤트 초기화</span>
+            <span className="btn-label">새 이벤트 만들기</span>
             <span className="btn-icon-right-thin">🔄</span>
           </button>
           <button 
@@ -117,7 +117,7 @@ const MobileAdminEvent = ({
   return (
     <div className="mobile-admin-container" style={{ padding: '0 1rem 150px 1rem', animation: 'fadeIn 0.5s ease-out' }}>
       <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
-        <h3 style={{ color: 'var(--primary)', fontSize: '1.25rem', fontWeight: '900' }}>🔄 이벤트 초기화 및 설정</h3>
+        <h3 style={{ color: 'var(--primary)', fontSize: '1.25rem', fontWeight: '900' }}>🔄 새 이벤트 만들기</h3>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '../../hooks/useIsMobile';
 
 const AdminLayout = () => {
@@ -6,17 +6,25 @@ const AdminLayout = () => {
   const navItems = [
     { path: '/admin/info', label: '식당관리', icon: '🏠' },
     { path: '/admin/event', label: '이벤트', icon: '⚙️' },
-    { path: '/admin/messages', label: '응모내역', icon: '📋' },
+    { path: '/admin/messages', label: '고객 관리', icon: '👥' },
   ];
 
   const isMobile = useIsMobile(768);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // 현재 페이지가 관리자 메인(/admin/info)인 경우 뒤로가기를 숨기거나 다르게 처리할 수 있지만,
+  // 일단 모든 페이지에서 보이도록 설정합니다.
 
   return (
     <div style={{ minHeight: '100vh', background: '#050505' }}>
-      {/* Header Section */}
+      {/* Header Section - 스크롤 시에도 항상 상단에 고정 */}
       <div style={{ 
-        position: 'sticky', 
+        position: 'fixed',  // sticky → fixed 로 변경 (가장 확실한 고정 방식)
         top: 0, 
+        left: 0,
+        right: 0,
+        width: '100%',
         zIndex: 1000, 
         background: '#050505', 
         borderBottom: isMobile ? '1px solid #111' : '1px solid #222',
@@ -30,16 +38,43 @@ const AdminLayout = () => {
             marginBottom: isMobile ? '0.4rem' : '1.5rem',
             padding: isMobile ? '0 1rem' : '0' 
           }}>
-            <h2 style={{ 
-              fontSize: isMobile ? 'clamp(1rem, 5vw, 1.4rem)' : '1.4rem', 
-              color: '#fff', 
-              margin: 0, 
-              fontWeight: '800', 
-              textAlign: 'left',
-              whiteSpace: 'nowrap'
-            }}>
-              사장님 관리 센터
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* 뒤로가기 버튼 */}
+              <button 
+                onClick={() => navigate(-1)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(197, 160, 89, 0.4)',
+                  color: 'var(--primary)',
+                  width: isMobile ? '32px' : '36px',
+                  height: isMobile ? '32px' : '36px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  padding: 0,
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(197, 160, 89, 0.1)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+              >
+                ←
+              </button>
+              
+              <h2 style={{ 
+                fontSize: isMobile ? 'clamp(1rem, 5vw, 1.4rem)' : '1.4rem', 
+                color: '#fff', 
+                margin: 0, 
+                fontWeight: '800', 
+                textAlign: 'left',
+                whiteSpace: 'nowrap'
+              }}>
+                사장님 관리 센터
+              </h2>
+            </div>
             <NavLink to="/" style={{ 
               textDecoration: 'none', 
               padding: isMobile ? '0.3rem 0.6rem' : '0.4rem 1rem', 
@@ -93,7 +128,8 @@ const AdminLayout = () => {
         </div>
       </div>
 
-      <div className="admin-layout-wrapper">
+      {/* 헤더 높이만큼 콘텐츠 영역을 아래로 밀어내기 */}
+      <div className="admin-layout-wrapper" style={{ paddingTop: isMobile ? '130px' : '175px' }}>
         <Outlet />
       </div>
     </div>
