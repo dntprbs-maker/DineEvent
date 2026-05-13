@@ -3,13 +3,14 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBdVUrgAeSCbzBVCQVk0wnLRcKcywxp5bY",
-  authDomain: "dineevent.firebaseapp.com",
-  projectId: "dineevent",
-  storageBucket: "dineevent.firebasestorage.app",
-  messagingSenderId: "775751591653",
-  appId: "1:775751591653:web:88a846761a8f8bba4e160c",
-  measurementId: "G-EHH6XHWV7Z"
+  // 환경변수로 안전하게 관리 (넷리파이 대시보드에 VITE_ 변수 등록 필요)
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

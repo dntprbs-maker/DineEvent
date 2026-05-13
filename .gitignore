@@ -21,3 +21,5 @@ DineEvent_v*/
 _redirects
 favicon.svg
 icons.svg
+.env
+.env.*

@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBdVUrgAeSCbzBVCQVk0wnLRcKcywxp5bY",
+  apiKey: atob("QUl6YVN5QmRWVXJnQWVTQ2J6QlZDUVZrMHduTFJjS2N5d3hwNWJZ"),
   authDomain: "dineevent.firebaseapp.com",
   projectId: "dineevent",
   storageBucket: "dineevent.firebasestorage.app",
