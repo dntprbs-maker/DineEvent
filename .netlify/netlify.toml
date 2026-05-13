@@ -6,7 +6,7 @@ headers = []
 [functions."*"]
 
 [build]
-publish = "C:\\Users\\크린\\Desktop\\DineEvent\\dist"
+publish = "dist"
 publishOrigin = "ui"
 commandOrigin = "ui"
 command = "npm run build"
