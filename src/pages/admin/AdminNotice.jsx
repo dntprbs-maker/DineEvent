@@ -450,7 +450,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
               style={{ ...(compact ? compactInputStyle : inputStyle), minHeight: cs.textareaMinH, resize: 'vertical' }}
             />
             {/* 템플릿 버튼 행 */}
-            <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+            <div style={{ display: 'flex', gap: '6px', marginTop: '6px', width: '100%' }}>
               {/* 현재 내용을 템플릿으로 저장 */}
               <button
                 onClick={saveTemplate}
@@ -459,10 +459,15 @@ const AdminNotice = ({ onClose, compact = false }) => {
                   flex: 1, padding: '0.4rem 0.6rem',
                   background: 'rgba(197,160,89,0.12)', border: '1px solid rgba(197,160,89,0.4)',
                   color: 'var(--primary)', borderRadius: '8px', fontSize: compact ? '0.6rem' : '0.78rem',
-                  fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap'
+                  fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
                 }}
               >
-                {savingTemplate ? '저장 중...' : '📌 템플릿 저장'}
+                {savingTemplate ? (
+                  <span>⏳ 저장 중...</span>
+                ) : (
+                  <><span>📌</span><span>템플릿 저장</span></>
+                )}
               </button>
               {/* 저장된 템플릿 불러오기 토글 */}
               <button
@@ -472,10 +477,11 @@ const AdminNotice = ({ onClose, compact = false }) => {
                   background: showTemplates ? 'rgba(197,160,89,0.25)' : 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(197,160,89,0.4)',
                   color: '#fff', borderRadius: '8px', fontSize: compact ? '0.6rem' : '0.78rem',
-                  fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap'
+                  fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
                 }}
               >
-                📂 {showTemplates ? '목록 닫기' : '템플릿 목록'}
+                <span>📂</span><span>{showTemplates ? '목록 닫기' : '템플릿 목록'}</span>
               </button>
             </div>
 
@@ -546,75 +552,68 @@ const AdminNotice = ({ onClose, compact = false }) => {
             <span style={{ fontSize: cs.checkboxLabel, fontWeight: 'bold' }}>📌 상단 고정</span>
           </label>
 
-          {/* 버튼 그룹 */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '0.3rem' }}>
+          {/* 하단 액션 버튼 그룹 (공지관리 + 등록하기 + 취소) */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '1.2rem', width: '100%' }}>
             {form.id && (
               <button 
                 onClick={resetForm}
-                style={{ flex: 1, background: '#333', color: '#fff', border: 'none', padding: cs.btnPad, borderRadius: cs.btnRadius, fontWeight: 'bold', cursor: 'pointer', fontSize: cs.btnFont }}
+                style={{ flex: 0.5, background: '#333', color: '#fff', border: 'none', padding: cs.btnPad, borderRadius: '24px', fontWeight: 'bold', cursor: 'pointer', fontSize: cs.btnFont }}
               >
                 취소
               </button>
             )}
-            {/* 등록 버튼은 아래에서 플로팅으로 렌더링됨 */}
+            
+            {/* 공지관리 버튼 */}
+            <button
+              className="premium-gold-button"
+              onClick={() => navigate('/admin/notice-manager')}
+              style={{
+                flex: 1,
+                height: compact ? '40px' : '48px',
+                borderRadius: '24px',
+                fontSize: cs.btnFont,
+                whiteSpace: 'nowrap',
+                fontWeight: '900',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
+                border: '1px solid rgba(197, 160, 89, 0.4)',
+              }}
+            >
+              <span>📋</span><span>공지관리</span>
+            </button>
+
+            {/* 등록하기 버튼 */}
+            <button 
+              onClick={handleSave} 
+              disabled={saving}
+              className="premium-gold-button"
+              style={{ 
+                flex: 1,
+                height: compact ? '40px' : '48px',
+                borderRadius: '24px', 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: cs.btnFont,
+                whiteSpace: 'nowrap',
+                fontWeight: '900',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.7)',
+                border: '1px solid rgba(197, 160, 89, 0.4)',
+                cursor: 'pointer',
+              }}
+            >
+              {saving ? (
+                <><span>⏳</span><span>저장 중</span></>
+              ) : (
+                <><span>✨</span><span>등록하기</span></>
+              )}
+            </button>
           </div>
         </div>
-      </div>
-
-      {/* ── 하단 플로팅 버튼 그룹 (공지관리 + 등록하기) ── */}
-      <div style={{
-        position: 'fixed',
-        bottom: compact ? '80px' : '40px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex',
-        gap: '12px',
-        zIndex: 9999,
-        pointerEvents: 'auto'
-      }}>
-        {/* 공지관리 버튼 (이동 기능 추가) */}
-        <button
-          className="premium-gold-button"
-          onClick={() => navigate('/admin/notice-manager')}
-          style={{
-            width: '140px',
-            height: '48px',
-            borderRadius: '24px',
-            fontSize: '0.95rem',
-            fontWeight: '900',
-            cursor: 'pointer', // 커서 포인터로 변경
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
-            border: '1px solid rgba(197, 160, 89, 0.4)',
-          }}
-        >
-          📋 공지관리
-        </button>
-
-        {/* 등록하기 버튼 */}
-        <button 
-          onClick={handleSave} 
-          disabled={saving}
-          className="premium-gold-button"
-          style={{ 
-            width: '140px', 
-            height: '48px', 
-            borderRadius: '24px', 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.95rem',
-            fontWeight: '900',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.7)',
-            border: '1px solid rgba(197, 160, 89, 0.4)',
-            cursor: 'pointer',
-          }}
-        >
-          {saving ? '⏳ 저장 중' : '✨ 등록하기'}
-        </button>
       </div>
 
       {/* 2. 관리 리스트 (사용자 요청으로 UI 숨김) */}

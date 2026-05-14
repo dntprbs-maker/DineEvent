@@ -85,8 +85,8 @@ const AdminNoticeManager = () => {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', color: '#fff' }}>
-      <h2 style={{ color: '#c5a059', marginBottom: '2rem', textAlign: 'center', fontWeight: '900' }}>
-        📋 공지 사항 관리
+      <h2 style={{ color: '#c5a059', marginBottom: '2rem', textAlign: 'left', fontWeight: '900' }}>
+        📋 지난 공지 목록
       </h2>
 
       {loading ? (

@@ -41,7 +41,13 @@ const AdminLayout = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {/* 뒤로가기 버튼 */}
               <button 
-                onClick={() => navigate(-1)}
+                onClick={() => {
+                  if (location.pathname === '/admin/notice-manager') {
+                    navigate('/admin/info', { state: { openModal: 'notice' }, replace: true });
+                  } else {
+                    navigate(-1);
+                  }
+                }}
                 style={{
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(197, 160, 89, 0.4)',

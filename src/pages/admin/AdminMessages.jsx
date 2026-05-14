@@ -18,8 +18,36 @@ const AdminMessages = () => {
     try {
       const q = query(collection(db, 'entries'), orderBy('timestamp', 'desc'));
       const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setEntries(data);
+      
+      const now = Date.now();
+      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+      const validData = [];
+
+      // 데이터를 불러오면서 24시간이 지난 내역은 자동으로 청소(삭제)합니다.
+      for (const document of querySnapshot.docs) {
+        const item = { id: document.id, ...document.data() };
+        
+        let entryTime = 0;
+        if (item.timestamp && typeof item.timestamp.toMillis === 'function') {
+          entryTime = item.timestamp.toMillis();
+        } else if (item.timestamp) {
+          entryTime = new Date(item.timestamp).getTime();
+        }
+
+        if (entryTime > 0 && (now - entryTime) > TWENTY_FOUR_HOURS) {
+          // 24시간이 지났으면 클라우드에서 영구 삭제
+          try {
+            await deleteDoc(doc(db, 'entries', item.id));
+          } catch (delErr) {
+            console.error("자동 삭제 실패:", delErr);
+          }
+        } else {
+          // 24시간 이내의 데이터만 화면에 표시
+          validData.push(item);
+        }
+      }
+
+      setEntries(validData);
     } catch (err) {
       console.error(err);
     } finally {

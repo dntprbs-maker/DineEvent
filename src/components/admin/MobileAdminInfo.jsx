@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AdminNotice from '../../pages/admin/AdminNotice';
 
 const MobileAdminInfo = ({ 
@@ -8,6 +9,17 @@ const MobileAdminInfo = ({
   handleSave, saving 
 }) => {
   const [activeModal, setActiveModal] = useState(null); 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // 공지사항 관리 페이지에서 뒤로가기로 돌아왔을 때 자동으로 팝업 띄우기
+    if (location.state?.openModal === 'notice') {
+      setActiveModal('notice');
+      // 새로고침 시 계속 열리는 것을 방지하기 위해 state 초기화
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const leftItems = [
     { id: 'brandName', label: '매장 이름', icon: '🏠' },
@@ -75,7 +87,7 @@ const MobileAdminInfo = ({
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: '69%',          // 92%의 3/4
+              width: '80%',          // 여백을 기존의 약 2/3 수준으로 축소 (69% -> 80%)
               maxHeight: '56vh',     // 75vh의 3/4
               overflowY: 'auto',
               background: '#0d0d0d',
