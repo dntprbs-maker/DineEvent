@@ -13,26 +13,13 @@ const AdminEvent = () => {
   const [showToast, setShowToast] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const handleNewEventSetup = () => {
-    // 6개의 고품질 목업 데이터로 초기화 (주인님 요청)
-    const mockPrizes = [
-      { name: '🥇 1등: 다이슨 에어랩 멀티 스타일러', totalCount: 1, currentCount: 1 },
-      { name: '🥈 2등: 신세계 상품권 10만원권', totalCount: 5, currentCount: 5 },
-      { name: '🥉 3등: 스타벅스 3만원권', totalCount: 10, currentCount: 10 },
-      { name: '🍗 4등: BHC 후라이드+콜라 세트', totalCount: 20, currentCount: 20 },
-      { name: '🍦 5등: 배스킨라빈스 파인트', totalCount: 50, currentCount: 50 },
-      { name: '🍀 6등: 다음 기회에 (꽝)', totalCount: 1000, currentCount: 1000 },
-    ];
-    setPrizes(mockPrizes);
-  };
-
   const defaultPrizes = [
-    { name: '🥇 1등: 다이슨 에어랩 멀티 스타일러', totalCount: 1, currentCount: 1 },
-    { name: '🥈 2등: 신세계 상품권 10만원권', totalCount: 5, currentCount: 5 },
-    { name: '🥉 3등: 스타벅스 3만원권', totalCount: 10, currentCount: 10 },
-    { name: '🍗 4등: BHC 후라이드+콜라 세트', totalCount: 20, currentCount: 20 },
-    { name: '🍦 5등: 배스킨라빈스 파인트', totalCount: 50, currentCount: 50 },
-    { name: '🍀 6등: 다음 기회에 (꽝)', totalCount: 1000, currentCount: 1000 }
+    { name: '한우 오마카세 2인 식사권', totalCount: 3, currentCount: 3 },
+    { name: '프리미엄 사케 세트', totalCount: 5, currentCount: 5 },
+    { name: '수제 디저트 교환권', totalCount: 20, currentCount: 20 },
+    { name: '에비스 생맥주 1잔', totalCount: 30, currentCount: 30 },
+    { name: '탄산음료 무료 쿠폰', totalCount: 50, currentCount: 50 },
+    { name: '아쉬운 꽝 (다음 기회에)', totalCount: 999, currentCount: 999 }
   ];
 
   useEffect(() => {
@@ -114,24 +101,6 @@ const AdminEvent = () => {
     if (success && blocker.proceed) blocker.proceed();
   };
 
-  // [NEW] 셋업 화면(로컬 상태)에서 작성된 새로운 데이터를 덮어쓰고 저장
-  const handleStartNewEvent = async (newList) => {
-    setSaving(true);
-    try {
-      await setDoc(doc(db, 'content', 'prizes'), { list: newList });
-      setPrizes(newList);
-      setOriginalPrizes(JSON.stringify(newList));
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
-      return true;
-    } catch (err) {
-      alert('저장 실패: ' + err.message);
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleConfirmReset = async () => {
     const resetList = prizes.map(p => ({
       ...p,
@@ -164,8 +133,6 @@ const AdminEvent = () => {
           handleChange={handleChange}
           handleSave={handleSave}
           handleConfirmReset={handleConfirmReset}
-          handleNewEventSetup={handleNewEventSetup}
-          handleStartNewEvent={handleStartNewEvent}
           saving={saving}
           showResetConfirm={showResetConfirm}
           setShowResetConfirm={setShowResetConfirm}
@@ -268,7 +235,7 @@ const AdminEvent = () => {
         {/* 분리된 독립 버튼 그룹 */}
         <div style={{ display: 'flex', gap: '15px', pointerEvents: 'auto' }}>
           <button 
-            onClick={() => handleNewEventSetup()} 
+            onClick={() => setShowResetConfirm(true)} 
             disabled={saving} 
             className="premium-gold-button"
             style={{ padding: '1.2rem 2.5rem', borderRadius: '50px', fontSize: '1rem' }}

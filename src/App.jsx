@@ -22,6 +22,10 @@ import AdminInfo from './pages/admin/AdminInfo'
 import AdminEvent from './pages/admin/AdminEvent'
 import AdminMessages from './pages/admin/AdminMessages'
 import AdminNoticeManager from './pages/admin/AdminNoticeManager' // [NEW] 공지 관리 센터 임포트
+import AdminDashboard from './pages/admin/AdminDashboard' // [NEW] 프리미엄 대시보드 V1 (테이블)
+import AdminDashboardV2 from './pages/admin/AdminDashboardV2' // [NEW] 프리미엄 대시보드 V2 (카드 그리드)
+import AdminDashboardV3 from './pages/admin/AdminDashboardV3' // [NEW] 기존 디자인 기반 레이아웃 재배치 (V3)
+import AdminDashboardV4 from './pages/admin/AdminDashboardV4' // [NEW] 최종 레이아웃 완벽 재현 (V4)
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -189,8 +193,12 @@ const router = createBrowserRouter([
       { path: "info", element: <AdminInfo /> },
       // { path: "menu", element: <AdminMenu /> }, // [제거]
       { path: "event", element: <AdminEvent /> },
-      { path: "messages", element: <AdminMessages /> },
+      { path: "messages", element: <AdminDashboardV4 /> }, // [변경] 프리미엄 대시보드를 '고객 관리'의 기본 화면으로 설정
       { path: "notice-manager", element: <AdminNoticeManager /> }, // [NEW] 공지 관리 센터 경로 추가
+      { path: "dashboard", element: <AdminDashboard /> }, // [NEW] 프리미엄 대시보드 V1
+      { path: "dashboard-v2", element: <AdminDashboardV2 /> }, // [NEW] 프리미엄 대시보드 V2
+      { path: "dashboard-v3", element: <AdminDashboardV3 /> }, // [NEW] 기존 디자인 + 배치 변경 (V3)
+      { path: "dashboard-v4", element: <AdminMessages /> }, // [변경] 기존 고객 관리(문자 발송) 화면을 이곳으로 이동
     ]
   }
 ]);

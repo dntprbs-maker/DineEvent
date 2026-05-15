@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../../firebase';
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, deleteDoc, doc, addDoc } from 'firebase/firestore';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
 
@@ -69,6 +69,38 @@ const AdminMessages = () => {
     }
   };
 
+  const generateMockEntries = async () => {
+    setLoading(true);
+    const prizes_list = ['🥇 1등: 다이슨 에어랩', '🥈 2등: 신세계 10만원권', '🥉 3등: 스타벅스 3만원권', '🍗 4등: BHC 후라이드+콜라 세트', '🍦 5등: 배스킨라빈스 파인트', '🍀 6등: 다음 기회에'];
+    
+    try {
+      for (let i = 0; i < 100; i++) {
+        const targetTime = new Date(Date.now() - (i * 60 * 1000)); // 1분 간격
+        const dateStr = targetTime.toLocaleString('ko-KR', { 
+          year: 'numeric', month: '2-digit', day: '2-digit', 
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false 
+        });
+
+        const mockEntry = {
+          name: `테스터${String(i + 1).padStart(3, '0')}`,
+          phone: `010-0000-${String(i + 1).padStart(4, '0')}`,
+          prize: prizes_list[i % prizes_list.length],
+          date: dateStr,
+          timestamp: targetTime
+        };
+        await addDoc(collection(db, 'entries'), mockEntry);
+      }
+      alert('목업 데이터 100개 생성 완료!');
+      fetchEntries();
+    } catch (err) {
+      console.error(err);
+      alert('생성 실패: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const uniqueData = useMemo(() => {
     return Array.from(new Map(entries.map(item => [item.phone, item])).values());
   }, [entries]);
@@ -95,6 +127,9 @@ const AdminMessages = () => {
     <div className="glass" style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h3 style={{ color: 'var(--primary)' }}>📋 고객 응모 내역 (Cloud)</h3>
+        <button onClick={generateMockEntries} className="premium-gold-button" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', borderRadius: '8px' }}>
+          ✨ 목업데이터 100개 생성
+        </button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '3rem' }}>
