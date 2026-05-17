@@ -1,17 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../../firebase';
-import { collection, query, orderBy, getDocs, deleteDoc, doc, addDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, deleteDoc, doc, addDoc, getDoc } from 'firebase/firestore';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
 
 const AdminMessages = () => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [smsTemplate, setSmsTemplate] = useState('[이벤트룰렛] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 "식당명"으로 오셔서 이벤트에 참여해보세요!');
+  const [smsTemplate, setSmsTemplate] = useState('[실제 매장이름] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!');
 
   useEffect(() => {
     fetchEntries();
+    fetchBrandName();
   }, []);
+
+  // 식당관리 정보에서 설정한 실제 매장명 불러오기
+  const fetchBrandName = async () => {
+    try {
+      const homeDoc = await getDoc(doc(db, 'settings', 'home'));
+      if (homeDoc.exists() && homeDoc.data().brandName) {
+        const name = homeDoc.data().brandName;
+        setSmsTemplate(`[${name}] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!`);
+      }
+    } catch (err) {
+      console.error("매장명 불러오기 실패:", err);
+    }
+  };
 
   const fetchEntries = async () => {
     setLoading(true);
