@@ -94,14 +94,6 @@ const MobileAdminEvent = ({
         <div className="action-floating-dual-perfect">
           <button 
             className="mockup-btn-extreme-gold" 
-            onClick={() => handleSave()}
-            disabled={saving}
-          >
-            <span className="btn-label">{saving ? '저장중' : '변경내용저장'}</span>
-            <span className="btn-icon-right-thin">💾</span>
-          </button>
-          <button 
-            className="mockup-btn-extreme-gold" 
             onClick={() => {
               // 메인 데이터는 건드리지 않고 로컬 상태만 초기화
               setSetupPrizes(Array(6).fill().map(() => ({ name: '', totalCount: 0, currentCount: 0 })));
@@ -110,6 +102,14 @@ const MobileAdminEvent = ({
           >
             <span className="btn-label">새 이벤트 만들기</span>
             <span className="btn-icon-right-thin">🔄</span>
+          </button>
+          <button 
+            className="mockup-btn-extreme-gold" 
+            onClick={() => handleSave()}
+            disabled={saving}
+          >
+            <span className="btn-label">{saving ? '저장중' : '변경내용저장'}</span>
+            <span className="btn-icon-right-thin">💾</span>
           </button>
         </div>
 
