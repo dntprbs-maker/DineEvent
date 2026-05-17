@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { db } from '../../firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 
 const MobileAdminMessages = ({ 
   entries, uniqueData, smsTemplate, setSmsTemplate, clearAll 
@@ -16,6 +16,8 @@ const MobileAdminMessages = ({
   const [templates, setTemplates] = useState([]);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [deleteTemplateId, setDeleteTemplateId] = useState(null);
 
   useEffect(() => {
     if (showSmsEditor) {
@@ -39,6 +41,43 @@ const MobileAdminMessages = ({
   const loadTemplate = (templateContent) => {
     setSmsTemplate(templateContent);
     setShowTemplates(false);
+  };
+
+  const saveTemplate = async () => {
+    if (!smsTemplate.trim()) {
+      alert('저장할 문자 내용을 먼저 입력해주세요.');
+      return;
+    }
+    setSavingTemplate(true);
+    try {
+      await addDoc(collection(db, 'smsTemplates'), {
+        content: smsTemplate.trim(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      await fetchTemplates();
+      setShowTemplates(true); // 저장 후 목록 열기
+      alert('템플릿으로 저장되었습니다!');
+    } catch (err) {
+      console.error('Template save error:', err);
+      alert('템플릿 저장 실패: ' + err.message);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const confirmDeleteTemplate = async () => {
+    if (!deleteTemplateId) return;
+    try {
+      await deleteDoc(doc(db, 'smsTemplates', deleteTemplateId));
+      setDeleteTemplateId(null);
+      await fetchTemplates();
+      alert('템플릿이 삭제되었습니다.');
+    } catch (err) {
+      console.error('Template delete error:', err);
+      alert('삭제 실패: ' + err.message);
+      setDeleteTemplateId(null);
+    }
   };
 
   // 기간 프리셋 설정
@@ -97,6 +136,58 @@ const MobileAdminMessages = ({
   return (
     <div className="mobile-admin-container" style={{ padding: '0 0.8rem 180px 0.8rem', animation: 'fadeIn 0.5s ease-out' }}>
       
+      {/* ── 템플릿 삭제 확인 다이얼로그 ── */}
+      {deleteTemplateId && (
+        <div
+          onClick={() => setDeleteTemplateId(null)}
+          style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+            zIndex: 9999999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#141414', borderRadius: '20px',
+              border: '1px solid rgba(255, 77, 77, 0.4)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+              padding: '2rem', textAlign: 'center',
+              width: '100%', maxWidth: '300px',
+              animation: 'popupFadeIn 0.2s ease-out'
+            }}
+          >
+            <div style={{ fontSize: '2rem', marginBottom: '0.6rem' }}>🗑️</div>
+            <h4 style={{ color: '#fff', fontSize: '1rem', fontWeight: '900', marginBottom: '0.4rem' }}>
+              템플릿 삭제
+            </h4>
+            <p style={{ color: '#aaa', fontSize: '0.82rem', marginBottom: '1.2rem', lineHeight: 1.5 }}>
+              이 템플릿을 삭제하시겠습니까?
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setDeleteTemplateId(null)}
+                style={{ flex: 1, padding: '0.7rem', borderRadius: '10px', background: '#222', border: '1px solid #333', color: '#aaa', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmDeleteTemplate}
+                style={{ flex: 1, padding: '0.7rem', borderRadius: '10px', background: 'linear-gradient(135deg, #ff4d4d, #cc0000)', border: '1px solid #ff6b6b', color: '#fff', fontWeight: '900', cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes popupFadeIn {
+              from { opacity: 0; transform: scale(0.92) translateY(10px); }
+              to   { opacity: 1; transform: scale(1)    translateY(0); }
+            }
+          `}} />
+        </div>
+      )}
 
       {/* 문자 템플릿 편집기 - 화면 중앙 팝업 모달 */}
       {showSmsEditor && (
@@ -138,69 +229,89 @@ const MobileAdminMessages = ({
 
             {/* 템플릿 버튼 행 */}
             <div style={{ display: 'flex', gap: '6px', marginTop: '8px', width: '100%' }}>
-              {/* 템플릿 관리자 페이지 새창 열기 */}
+              {/* 현재 내용을 템플릿으로 저장 */}
               <button
-                onClick={() => window.open('/admin/sms-manager', '_blank')}
+                onClick={saveTemplate}
+                disabled={savingTemplate}
                 style={{
-                  flex: 1, padding: '0.5rem 0.6rem',
+                  flex: 1, padding: '0.4rem 0.6rem',
                   background: 'rgba(197, 160, 89, 0.12)', border: '1px solid rgba(197, 160, 89, 0.4)',
-                  color: 'var(--primary)', borderRadius: '8px', fontSize: '0.75rem',
+                  color: 'var(--primary)', borderRadius: '8px', fontSize: '0.78rem',
                   fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
                 }}
               >
-                <span>📂</span><span>템플릿 관리 (새창)</span>
+                {savingTemplate ? (
+                  <span>⏳ 저장 중...</span>
+                ) : (
+                  <><span>📌</span><span>템플릿 저장</span></>
+                )}
               </button>
-              {/* 템플릿 목록 토글 */}
+              {/* 저장된 템플릿 불러오기 토글 */}
               <button
                 onClick={() => setShowTemplates(v => !v)}
                 style={{
-                  flex: 1, padding: '0.5rem 0.6rem',
+                  flex: 1, padding: '0.4rem 0.6rem',
                   background: showTemplates ? 'rgba(197, 160, 89, 0.25)' : 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(197, 160, 89, 0.4)',
-                  color: '#fff', borderRadius: '8px', fontSize: '0.75rem',
+                  color: '#fff', borderRadius: '8px', fontSize: '0.78rem',
                   fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
                 }}
               >
-                <span>📋</span><span>{showTemplates ? '목록 닫기' : '템플릿 목록'}</span>
+                <span>📂</span><span>{showTemplates ? '목록 닫기' : '템플릿 목록'}</span>
               </button>
             </div>
 
-            {/* 템플릿 선택 리스트 */}
+            {/* 템플릿 목록 패널 */}
             {showTemplates && (
               <div style={{
-                marginTop: '10px', border: '1px solid rgba(197, 160, 89, 0.25)',
-                borderRadius: '12px', background: 'rgba(0, 0, 0, 0.5)',
-                padding: '10px', maxHeight: '180px', overflowY: 'auto'
+                marginTop: '8px', border: '1px solid rgba(197, 160, 89, 0.25)',
+                borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)',
+                padding: '10px', maxHeight: '220px', overflowY: 'auto'
               }}>
                 <p style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '8px', textAlign: 'left' }}>📋 저장된 템플릿 — 클릭하면 내용이 채워집니다</p>
                 {templateLoading ? (
                   <p style={{ color: '#666', fontSize: '0.75rem', textAlign: 'center' }}>불러오는 중...</p>
                 ) : templates.length === 0 ? (
-                  <p style={{ color: '#555', fontSize: '0.75rem', textAlign: 'center', padding: '1rem 0' }}>저장된 템플릿이 없습니다.<br/>'템플릿 관리'에서 추가해 주세요.</p>
+                  <p style={{ color: '#555', fontSize: '0.75rem', textAlign: 'center', padding: '1rem 0' }}>저장된 템플릿이 없습니다.<br/>위의 '📌 템플릿 저장' 버튼으로 추가하세요.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {templates.map(t => (
                       <div
                         key={t.id}
-                        onClick={() => loadTemplate(t.content)}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.04)', borderRadius: '8px',
-                          border: '1px solid rgba(255, 255, 255, 0.07)', padding: '8px 10px',
-                          cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left'
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          background: 'rgba(255,255,255,0.04)', borderRadius: '8px',
+                          border: '1px solid rgba(255,255,255,0.07)', padding: '8px 10px',
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(197, 160, 89, 0.15)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}
                       >
-                        <p style={{
-                          color: '#ddd', fontSize: '0.8rem',
-                          lineHeight: 1.4, margin: 0,
-                          overflow: 'hidden', display: '-webkit-box',
-                          WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'
-                        }}>
+                        {/* 내용 클릭 → 불러오기 */}
+                        <p
+                          onClick={() => loadTemplate(t.content)}
+                          style={{
+                            flex: 1, color: '#ddd', fontSize: '0.8rem',
+                            lineHeight: 1.4, cursor: 'pointer', margin: 0,
+                            overflow: 'hidden', display: '-webkit-box',
+                            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                            textAlign: 'left'
+                          }}
+                          title="클릭하면 문자내용에 불러옵니다"
+                        >
                           {t.content}
                         </p>
+                        {/* 템플릿 삭제 버튼 */}
+                        <button
+                          onClick={() => setDeleteTemplateId(t.id)}
+                          style={{
+                            flexShrink: 0, background: 'rgba(255,77,77,0.15)',
+                            border: '1px solid rgba(255,77,77,0.3)', color: '#ff6b6b',
+                            borderRadius: '6px', padding: '3px 8px',
+                            fontSize: '0.7rem', cursor: 'pointer', fontWeight: '700'
+                          }}
+                        >
+                          삭제
+                        </button>
                       </div>
                     ))}
                   </div>
