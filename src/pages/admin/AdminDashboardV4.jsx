@@ -10,7 +10,7 @@ const AdminDashboardV4 = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [smsTemplate, setSmsTemplate] = useState('[다인이벤트] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!');
+  const [smsTemplate, setSmsTemplate] = useState('[이벤트룰렛] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!');
 
   const isMobile = useIsMobile(768);
 

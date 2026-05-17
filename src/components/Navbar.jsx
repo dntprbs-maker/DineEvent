@@ -5,7 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 const Navbar = () => {
   const location = useLocation();
-  const [brandName, setBrandName] = useState('DINE EVENT');
+  const [brandName, setBrandName] = useState('EVENT ROULETTE');
 
   useEffect(() => {
     const fetchBrand = async () => {

@@ -117,7 +117,7 @@ const GlobalStyle = () => (
 // [NEW] Root Layout for Public Pages
 const RootLayout = () => {
   const location = useLocation();
-  const [brandName, setBrandName] = useState('DINE EVENT');
+  const [brandName, setBrandName] = useState('EVENT ROULETTE');
 
   useEffect(() => {
     const fetchBrand = async () => {

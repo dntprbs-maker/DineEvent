@@ -11,7 +11,7 @@ const AdminDashboard = () => {
     { id: 6, date: '2026. 05. 15. 23:55:12', name: '송혜교', phone: '010-8888-9999', prize: '🍀 다음 기회에', status: 'loss' },
   ]);
 
-  const [smsTemplate, setSmsTemplate] = useState('[다인이벤트] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!');
+  const [smsTemplate, setSmsTemplate] = useState('[이벤트룰렛] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!');
 
   const styles = {
     container: {

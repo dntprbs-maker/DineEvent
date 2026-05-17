@@ -7,7 +7,7 @@ import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
 const AdminMessages = () => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [smsTemplate, setSmsTemplate] = useState('[다인이벤트] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 "식당명"으로 오셔서 이벤트에 참여해보세요!');
+  const [smsTemplate, setSmsTemplate] = useState('[이벤트룰렛] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 "식당명"으로 오셔서 이벤트에 참여해보세요!');
 
   useEffect(() => {
     fetchEntries();
