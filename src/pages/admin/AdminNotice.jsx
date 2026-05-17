@@ -514,8 +514,9 @@ const AdminNotice = ({ onClose, compact = false }) => {
                           style={{
                             flex: 1, color: '#ddd', fontSize: compact ? '0.6rem' : '0.8rem',
                             lineHeight: 1.4, cursor: 'pointer', margin: 0,
-                            overflow: 'hidden', display: '-webkit-box',
-                            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                            textAlign: 'left'
                           }}
                           title="클릭하면 공지내용에 불러옵니다"
                         >
