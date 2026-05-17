@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../../firebase';
 import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
 
 const AdminDashboardV4 = () => {
   const [entries, setEntries] = useState([]);
@@ -9,6 +11,12 @@ const AdminDashboardV4 = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [smsTemplate, setSmsTemplate] = useState('[다인이벤트] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!');
+
+  const isMobile = useIsMobile(768);
+
+  const uniqueData = useMemo(() => {
+    return Array.from(new Map(entries.map(item => [item.phone, item])).values());
+  }, [entries]);
 
   // 데이터 불러오기
   useEffect(() => {
@@ -232,6 +240,20 @@ const AdminDashboardV4 = () => {
   };
 
   if (loading && entries.length === 0) return <div style={{ color: '#fff', padding: '100px', textAlign: 'center' }}>데이터 로딩 중...</div>;
+
+  if (isMobile) {
+    return (
+      <div className="admin-content-inner">
+        <MobileAdminMessages 
+          entries={entries}
+          uniqueData={uniqueData}
+          smsTemplate={smsTemplate}
+          setSmsTemplate={setSmsTemplate}
+          clearAll={clearAll}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>

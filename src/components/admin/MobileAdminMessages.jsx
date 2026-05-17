@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { db } from '../../firebase';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 
 const MobileAdminMessages = ({ 
   entries, uniqueData, smsTemplate, setSmsTemplate, clearAll 
@@ -9,6 +11,35 @@ const MobileAdminMessages = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSmsEditor, setShowSmsEditor] = useState(false);
   const [showEmptyAlert, setShowEmptyAlert] = useState(false);
+
+  // 문자 템플릿 관리용 상태 추가
+  const [templates, setTemplates] = useState([]);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  useEffect(() => {
+    if (showSmsEditor) {
+      fetchTemplates();
+    }
+  }, [showSmsEditor]);
+
+  const fetchTemplates = async () => {
+    setTemplateLoading(true);
+    try {
+      const q = query(collection(db, 'smsTemplates'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      setTemplates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error('Template fetch error:', err);
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
+
+  const loadTemplate = (templateContent) => {
+    setSmsTemplate(templateContent);
+    setShowTemplates(false);
+  };
 
   // 기간 프리셋 설정
   const setPresetRange = (days) => {
@@ -104,6 +135,78 @@ const MobileAdminMessages = ({
                 outline: 'none', resize: 'none'
               }}
             />
+
+            {/* 템플릿 버튼 행 */}
+            <div style={{ display: 'flex', gap: '6px', marginTop: '8px', width: '100%' }}>
+              {/* 템플릿 관리자 페이지 새창 열기 */}
+              <button
+                onClick={() => window.open('/admin/sms-manager', '_blank')}
+                style={{
+                  flex: 1, padding: '0.5rem 0.6rem',
+                  background: 'rgba(197, 160, 89, 0.12)', border: '1px solid rgba(197, 160, 89, 0.4)',
+                  color: 'var(--primary)', borderRadius: '8px', fontSize: '0.75rem',
+                  fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
+                }}
+              >
+                <span>📂</span><span>템플릿 관리 (새창)</span>
+              </button>
+              {/* 템플릿 목록 토글 */}
+              <button
+                onClick={() => setShowTemplates(v => !v)}
+                style={{
+                  flex: 1, padding: '0.5rem 0.6rem',
+                  background: showTemplates ? 'rgba(197, 160, 89, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(197, 160, 89, 0.4)',
+                  color: '#fff', borderRadius: '8px', fontSize: '0.75rem',
+                  fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
+                }}
+              >
+                <span>📋</span><span>{showTemplates ? '목록 닫기' : '템플릿 목록'}</span>
+              </button>
+            </div>
+
+            {/* 템플릿 선택 리스트 */}
+            {showTemplates && (
+              <div style={{
+                marginTop: '10px', border: '1px solid rgba(197, 160, 89, 0.25)',
+                borderRadius: '12px', background: 'rgba(0, 0, 0, 0.5)',
+                padding: '10px', maxHeight: '180px', overflowY: 'auto'
+              }}>
+                <p style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '8px', textAlign: 'left' }}>📋 저장된 템플릿 — 클릭하면 내용이 채워집니다</p>
+                {templateLoading ? (
+                  <p style={{ color: '#666', fontSize: '0.75rem', textAlign: 'center' }}>불러오는 중...</p>
+                ) : templates.length === 0 ? (
+                  <p style={{ color: '#555', fontSize: '0.75rem', textAlign: 'center', padding: '1rem 0' }}>저장된 템플릿이 없습니다.<br/>'템플릿 관리'에서 추가해 주세요.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {templates.map(t => (
+                      <div
+                        key={t.id}
+                        onClick={() => loadTemplate(t.content)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.04)', borderRadius: '8px',
+                          border: '1px solid rgba(255, 255, 255, 0.07)', padding: '8px 10px',
+                          cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(197, 160, 89, 0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}
+                      >
+                        <p style={{
+                          color: '#ddd', fontSize: '0.8rem',
+                          lineHeight: 1.4, margin: 0,
+                          overflow: 'hidden', display: '-webkit-box',
+                          WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'
+                        }}>
+                          {t.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <p style={{ color: '#555', fontSize: '0.75rem', marginTop: '0.6rem' }}>
               ※ 현재 필터링된 {targetNumbers.length}명의 고객에게 발송됩니다.
             </p>
@@ -171,8 +274,14 @@ const MobileAdminMessages = ({
         </div>
       )}
 
-      {/* 응모 내역 슬림 리스트 - 검색창 영역 확보를 위해 여백 조정 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* 응모 내역 슬림 리스트 - 검색창 영역 확보를 위해 동적 여백 적용 */}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '8px',
+        marginTop: isFilterOpen ? '170px' : '75px',
+        transition: 'margin-top 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      }}>
         {filteredEntries.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '5rem 0', color: '#333', fontStyle: 'italic' }}>
             {searchTerm ? '검색 결과가 없습니다.' : '내역이 존재하지 않습니다.'}
