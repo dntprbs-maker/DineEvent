@@ -77,9 +77,9 @@ const AdminLayout = () => {
                 to={item.path}
                 style={({ isActive }) => ({
                   textDecoration: 'none',
-                  padding: isMobile ? '12px' : '15px 30px',
+                  padding: isMobile ? '10px 8px' : '15px 30px',
                   borderRadius: '25px',
-                  fontSize: isMobile ? '11px' : '15px',
+                  fontSize: isMobile ? '12px' : '15px',
                   fontWeight: '900',
                   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   background: isActive 
@@ -92,7 +92,7 @@ const AdminLayout = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '15px',
+                  gap: isMobile ? '0' : '15px',
                   boxShadow: isActive ? `0 0 30px ${item.glow}` : 'none',
                   transform: isActive ? 'scale(1.02)' : 'none',
                   backdropFilter: 'blur(15px)',
@@ -109,22 +109,24 @@ const AdminLayout = () => {
                       zIndex: 0
                     }} />
                     
-                    <div style={{ 
-                      width: isMobile ? '28px' : '36px', 
-                      height: isMobile ? '28px' : '36px', 
-                      borderRadius: '10px',
-                      background: isActive ? item.color : '#222',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: isMobile ? '14px' : '18px',
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                      zIndex: 1,
-                      transition: 'all 0.3s'
-                    }}>
-                      {item.icon}
-                    </div>
-                    <span style={{ zIndex: 1, letterSpacing: '0.02em' }}>{item.label}</span>
+                    {!isMobile && (
+                      <div style={{ 
+                        width: '36px', 
+                        height: '36px', 
+                        borderRadius: '10px',
+                        background: isActive ? item.color : '#222',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                        zIndex: 1,
+                        transition: 'all 0.3s'
+                      }}>
+                        {item.icon}
+                      </div>
+                    )}
+                    <span style={{ zIndex: 1, letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{item.label}</span>
                   </>
                 )}
               </NavLink>
