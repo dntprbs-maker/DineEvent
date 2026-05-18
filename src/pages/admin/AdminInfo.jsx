@@ -6,9 +6,11 @@ import AdminNotice from './AdminNotice';
 import { db, storage } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useTenant } from '../../context/TenantContext';
 
 const AdminInfo = () => {
   const navigate = useNavigate();
+  const { getDocRef } = useTenant();
   const [homeSettings, setHomeSettings] = useState({ brandName: '', topLabel: '', title: '', subtitle: '', heroImage: '' });
   const [menuImages, setMenuImages] = useState({ image1: '', image2: '' });
   const [locationSettings, setLocationSettings] = useState({ address: '' });
@@ -25,9 +27,9 @@ const AdminInfo = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const homeDoc = await getDoc(doc(db, 'settings', 'home'));
-        const locDoc = await getDoc(doc(db, 'settings', 'location'));
-        const menuDoc = await getDoc(doc(db, 'content', 'menu_image'));
+        const homeDoc = await getDoc(getDocRef('settings', 'home'));
+        const locDoc = await getDoc(getDocRef('settings', 'location'));
+        const menuDoc = await getDoc(getDocRef('content', 'menu_image'));
         const hData = homeDoc.exists() ? homeDoc.data() : homeSettings;
         const lData = locDoc.exists() ? locDoc.data() : locationSettings;
         const mData = menuDoc.exists() ? { 
@@ -63,9 +65,9 @@ const AdminInfo = () => {
   const handleSave = async (silent = false) => {
     setSaving(true);
     try {
-      await setDoc(doc(db, 'settings', 'home'), homeSettings);
-      await setDoc(doc(db, 'settings', 'location'), locationSettings);
-      await setDoc(doc(db, 'content', 'menu_image'), { imageUrl: menuImages.image1, image1: menuImages.image1, image2: menuImages.image2 });
+      await setDoc(getDocRef('settings', 'home'), homeSettings);
+      await setDoc(getDocRef('settings', 'location'), locationSettings);
+      await setDoc(getDocRef('content', 'menu_image'), { imageUrl: menuImages.image1, image1: menuImages.image1, image2: menuImages.image2 });
       setOriginalData(JSON.stringify({ hData: homeSettings, lData: locationSettings, mData: menuImages }));
       if (!silent) { setShowToast(true); setTimeout(() => setShowToast(false), 2000); }
       return true;
@@ -300,7 +302,7 @@ const AdminInfo = () => {
           onClick={() => setShowNoticeModal(false)}
           style={{
             position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-            background: 'rgba(0,0,0,0.6)', // 배경 투명도 낮춤 → 뒤 화면이 살짝 보임
+            background: 'rgba(0,0,0,0.6)', 
             backdropFilter: 'blur(6px)',
             zIndex: 999999,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -311,9 +313,9 @@ const AdminInfo = () => {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: '100%', maxWidth: '547px', // 820px의 2/3
-              maxHeight: '60vh',                 // 90vh의 2/3
-              overflowY: 'auto',                 // 내용이 길면 팝업 내부에서 스크롤
+              width: '100%', maxWidth: '547px', 
+              maxHeight: '60vh',                 
+              overflowY: 'auto',                 
               background: '#0d0d0d',
               borderRadius: '24px',
               border: '1px solid rgba(197, 160, 89, 0.35)',
@@ -348,7 +350,7 @@ const AdminInfo = () => {
         </div>
       )}
 
-      {/* 빌드 버전 표시 (최신 배포 확인용) */}
+      {/* 빌드 버전 표시 */}
       <div style={{ position: 'fixed', bottom: '5px', left: '10px', fontSize: '10px', color: '#333', zIndex: 9999, pointerEvents: 'none' }}>
         v1.1.0 - Notice Update
       </div>

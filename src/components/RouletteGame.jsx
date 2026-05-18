@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useTenant } from '../context/TenantContext';
 
 const RouletteGame = () => {
+  const { tenantId, getDocRef, getColRef } = useTenant();
   const [isSpinning, setIsSpinning] = useState(false);
   const [result, setResult] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -17,11 +19,13 @@ const RouletteGame = () => {
 
   useEffect(() => {
     fetchInitialPrizes();
-  }, []);
+  }, [tenantId]);
 
   const fetchInitialPrizes = async () => {
     try {
-      const prizeDoc = await getDoc(doc(db, 'content', 'prizes'));
+      // 테넌트 격리형 prizes 조회
+      const prizeDocRef = getDocRef('content', 'prizes');
+      const prizeDoc = await getDoc(prizeDocRef);
       if (prizeDoc.exists()) {
         const data = prizeDoc.data().list || [];
         setPrizes(data);
@@ -52,7 +56,9 @@ const RouletteGame = () => {
     isLockedRef.current = true;
     setIsSpinning(true);
     
-    const snap = await getDoc(doc(db, 'content', 'prizes'));
+    // 실시간 최신 재고 조회
+    const prizeDocRef = getDocRef('content', 'prizes');
+    const snap = await getDoc(prizeDocRef);
     const livePrizes = snap.exists() ? (snap.data().list || []) : [...prizes];
     setPrizes(livePrizes);
 
@@ -96,8 +102,11 @@ const RouletteGame = () => {
       );
       
       try {
-        await setDoc(doc(db, 'content', 'prizes'), { list: updatedPrizes });
-        await addDoc(collection(db, 'entries'), {
+        const prizeDocRef = getDocRef('content', 'prizes');
+        await setDoc(prizeDocRef, { list: updatedPrizes });
+        
+        const entriesColRef = getColRef('entries');
+        await addDoc(entriesColRef, {
           name: form.name,
           phone: validatedPhone,
           prize: winnerPrize.name,
@@ -156,42 +165,40 @@ const RouletteGame = () => {
             animation: 'impact 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49)',
             position: 'relative', overflow: 'hidden'
           }}>
-            {/* 축하/아쉽 배너: SVG 이미지로 처리 → 줄바꿈 문제 완전 해결
-                SVG는 크기가 정확히 제어되어 절대 깨지지 않음 */}
+            {/* 축하/아쉽 배너 */}
             <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
               <img 
                 src={result?.includes('꽝') ? '/consolation_banner.svg' : '/congratulations_banner.svg'}
                 alt={result?.includes('꽝') ? '아쉽네요' : '축하합니다!'}
                 style={{ 
-                  width: '100%',        /* 컨테이너 너비에 맞게 자동 조절 */
-                  maxWidth: '400px',    /* 최대 너비 제한 */
-                  height: 'auto',       /* 비율 유지 */
+                  width: '100%',        
+                  maxWidth: '400px',    
+                  height: 'auto',       
                   display: 'block',
                   margin: '0 auto'
                 }}
               />
             </div>
-            {/* 경품명: inline-block → block 변경해야 word-break:keep-all이 정상 작동 */}
+            {/* 경품명 */}
             <div style={{ position: 'relative', width: '100%', textAlign: 'center' }}>
               <p style={{ 
                 color: '#fff', 
-                /* 최솟값 2rem → 1.4rem: 좁은 화면에서 글자가 더 작아져서 한 줄에 들어옴 */
                 fontSize: 'clamp(1.4rem, 7vw, 3.5rem)', 
                 fontWeight: '900', 
                 textShadow: `0 0 20px ${result?.includes('꽝') ? 'rgba(255, 77, 77, 0.8)' : 'rgba(255, 255, 255, 0.8)'}, 0 0 40px ${result?.includes('꽝') ? 'rgba(255, 77, 77, 0.4)' : 'rgba(197, 160, 89, 0.6)'}`,
                 lineHeight: '1.3',
-                wordBreak: 'keep-all'   /* 공백 기준으로만 줄바꿈: 어절 중간 절대 안 자름 */
+                wordBreak: 'keep-all'   
               }}>
                 {result}
               </p>
             </div>
-            {/* 직원확인 버튼: 플로팅 스타일 적용 */}
+            {/* 직원확인 버튼 */}
             <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', width: '100%' }}>
               <button 
                 className="btn-primary float-btn" 
                 onClick={() => {
                   alert('직원 확인이 완료되었습니다. 감사합니다!');
-                  navigate('/');
+                  navigate(`/${tenantId}`);
                 }}
                 style={{ 
                   padding: '0.6rem 1.8rem', 
@@ -214,7 +221,6 @@ const RouletteGame = () => {
         {isSpinning && (
           <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '30px', border: '1px dashed var(--primary)' }}>
             <div style={{ height: '80px', overflow: 'hidden', marginBottom: '2rem' }}>
-              {/* 슬롯 애니메이션 텍스트도 clamp로 반응형 적용 */}
               <p style={{ fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', fontWeight: '800', color: 'var(--primary)', animation: 'slotScroll 0.1s infinite linear', wordBreak: 'keep-all' }}>
                 {slotText}
               </p>
@@ -308,7 +314,7 @@ const RouletteGame = () => {
           .modal-content { padding: 1.5rem !important; border-radius: 20px !important; }
           .modal-title { font-size: 1.1rem !important; margin-bottom: 0.8rem !important; }
           .modal-form { gap: 0.6rem !important; align-items: stretch !important; } 
-          .form-group { gap: 0.2rem !important; align-items: flex-start !important; } /* 라벨 좌측 정렬 */
+          .form-group { gap: 0.2rem !important; align-items: flex-start !important; } 
           .form-label { font-size: 0.7rem !important; margin-bottom: 0 !important; text-align: left !important; width: 100% !important; padding-left: 0.2rem !important; }
           .modal-input { padding: 0.7rem !important; font-size: 0.85rem !important; width: 100% !important; }
           .consent-box { 
@@ -322,10 +328,10 @@ const RouletteGame = () => {
           .agree-label { font-size: 0.75rem !important; padding: 0.2rem 0 !important; gap: 0.4rem !important; justify-content: flex-start !important; }
           .agree-label input { width: 16px !important; height: 16px !important; }
           .modal-submit-btn { 
-            width: 60% !important; /* 좌우 크기 절반 수준으로 축소 (가독성 위해 60% 설정) */
-            padding: 0.7rem !important; /* 상하 크기 2/3 수준 (기존 1rem 대비) */
+            width: 60% !important; 
+            padding: 0.7rem !important; 
             font-size: 0.9rem !important; 
-            margin: 0.5rem auto 0 auto !important; /* 중앙 정렬 및 여백 */
+            margin: 0.5rem auto 0 auto !important; 
             display: block !important;
             border-radius: 30px !important;
           }

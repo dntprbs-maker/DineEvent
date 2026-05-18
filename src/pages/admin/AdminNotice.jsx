@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // [NEW] 이동 기능 임포트
 import { db } from '../../firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { useTenant } from '../../context/TenantContext';
 
 const AdminNotice = ({ onClose, compact = false }) => {
   const navigate = useNavigate(); // [NEW] 이동 함수 선언
+  const { getColRef, tenantId } = useTenant();
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,12 +45,12 @@ const AdminNotice = ({ onClose, compact = false }) => {
   useEffect(() => {
     fetchNotices();
     fetchTemplates(); // 템플릿도 함께 불러오기
-  }, []);
+  }, [tenantId]);
 
   const fetchNotices = async () => {
     try {
       // [FIX] 복합 인덱스 불필요 - createdAt 단일 정렬 후 JS에서 isPinned 처리
-      const q = query(collection(db, 'notices'), orderBy('createdAt', 'desc'));
+      const q = query(getColRef('notices'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
@@ -87,7 +89,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
     try {
       if (form.id) {
         // 수정
-        const docRef = doc(db, 'notices', form.id);
+        const docRef = doc(getColRef('notices'), form.id);
         await updateDoc(docRef, {
           startDate: form.startDate,
           endDate: form.endDate,
@@ -97,7 +99,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
         });
       } else {
         // 신규 등록
-        await addDoc(collection(db, 'notices'), {
+        await addDoc(getColRef('notices'), {
           startDate: form.startDate,
           endDate: form.endDate,
           content: form.content,
@@ -122,7 +124,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
   const fetchTemplates = async () => {
     setTemplateLoading(true);
     try {
-      const q = query(collection(db, 'noticeTemplates'), orderBy('createdAt', 'desc'));
+      const q = query(getColRef('noticeTemplates'), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
       setTemplates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (err) {
@@ -140,7 +142,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
     }
     setSavingTemplate(true);
     try {
-      await addDoc(collection(db, 'noticeTemplates'), {
+      await addDoc(getColRef('noticeTemplates'), {
         content: form.content.trim(),
         createdAt: serverTimestamp()
       });
@@ -164,7 +166,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
   const confirmDeleteTemplate = async () => {
     if (!deleteTemplateId) return;
     try {
-      await deleteDoc(doc(db, 'noticeTemplates', deleteTemplateId));
+      await deleteDoc(doc(getColRef('noticeTemplates'), deleteTemplateId));
       setDeleteTemplateId(null);
       await fetchTemplates();
     } catch (err) {
@@ -182,7 +184,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
   const confirmDelete = async () => {
     if (!deleteTargetId) return;
     try {
-      await deleteDoc(doc(db, 'notices', deleteTargetId));
+      await deleteDoc(doc(getColRef('notices'), deleteTargetId));
       setDeleteTargetId(null);
       fetchNotices(); // 목록 새로고침
     } catch (err) {
@@ -567,7 +569,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
             {/* 공지관리 버튼 */}
             <button
               className="premium-gold-button"
-              onClick={() => navigate('/admin/notice-manager')}
+              onClick={() => navigate(`/${tenantId}/admin/notice-manager`)}
               style={{
                 flex: 1,
                 height: compact ? '40px' : '48px',

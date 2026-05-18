@@ -4,8 +4,10 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminEvent from '../../components/admin/MobileAdminEvent';
 import { db } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useTenant } from '../../context/TenantContext';
 
 const AdminEvent = () => {
+  const { getDocRef } = useTenant();
   const [prizes, setPrizes] = useState([]);
   const [originalPrizes, setOriginalPrizes] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ const AdminEvent = () => {
   useEffect(() => {
     const fetchPrizes = async () => {
       try {
-        const docRef = doc(db, 'content', 'prizes');
+        const docRef = getDocRef('content', 'prizes');
         const docSnap = await getDoc(docRef);
         let data = defaultPrizes;
         if (docSnap.exists() && docSnap.data().list && docSnap.data().list.length > 0) {
@@ -93,7 +95,7 @@ const AdminEvent = () => {
     if (saving) return;
     setSaving(true);
     try {
-      await setDoc(doc(db, 'content', 'prizes'), { list: prizes });
+      await setDoc(getDocRef('content', 'prizes'), { list: prizes });
       setOriginalPrizes(JSON.stringify(prizes));
       if (!silent) {
         setShowToast(true);
@@ -118,7 +120,7 @@ const AdminEvent = () => {
   const handleStartNewEvent = async (newList) => {
     setSaving(true);
     try {
-      await setDoc(doc(db, 'content', 'prizes'), { list: newList });
+      await setDoc(getDocRef('content', 'prizes'), { list: newList });
       setPrizes(newList);
       setOriginalPrizes(JSON.stringify(newList));
       setShowToast(true);
@@ -140,7 +142,7 @@ const AdminEvent = () => {
     setSaving(true);
     setShowResetConfirm(false);
     try {
-      await setDoc(doc(db, 'content', 'prizes'), { list: resetList });
+      await setDoc(getDocRef('content', 'prizes'), { list: resetList });
       setPrizes(resetList);
       setOriginalPrizes(JSON.stringify(resetList));
       setShowToast(true);

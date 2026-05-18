@@ -3,8 +3,10 @@ import { db } from '../../firebase';
 import { collection, query, orderBy, getDocs, deleteDoc, doc, addDoc, getDoc } from 'firebase/firestore';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
+import { useTenant } from '../../context/TenantContext';
 
 const AdminMessages = () => {
+  const { getColRef, getDocRef, tenantId } = useTenant();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [smsTemplate, setSmsTemplate] = useState('[실제 매장이름] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!');
@@ -12,12 +14,12 @@ const AdminMessages = () => {
   useEffect(() => {
     fetchEntries();
     fetchBrandName();
-  }, []);
+  }, [tenantId]);
 
   // 식당관리 정보에서 설정한 실제 매장명 불러오기
   const fetchBrandName = async () => {
     try {
-      const homeDoc = await getDoc(doc(db, 'settings', 'home'));
+      const homeDoc = await getDoc(getDocRef('settings', 'home'));
       if (homeDoc.exists() && homeDoc.data().brandName) {
         const name = homeDoc.data().brandName;
         setSmsTemplate(`[${name}] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!`);
@@ -30,7 +32,7 @@ const AdminMessages = () => {
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'entries'), orderBy('timestamp', 'desc'));
+      const q = query(getColRef('entries'), orderBy('timestamp', 'desc'));
       const querySnapshot = await getDocs(q);
       
       const now = Date.now();
@@ -51,7 +53,7 @@ const AdminMessages = () => {
         if (entryTime > 0 && (now - entryTime) > TWENTY_FOUR_HOURS) {
           // 24시간이 지났으면 클라우드에서 영구 삭제
           try {
-            await deleteDoc(doc(db, 'entries', item.id));
+            await deleteDoc(doc(getColRef('entries'), item.id));
           } catch (delErr) {
             console.error("자동 삭제 실패:", delErr);
           }
@@ -73,7 +75,7 @@ const AdminMessages = () => {
     if (window.confirm('클라우드의 모든 응모 내역을 삭제하시겠습니까?')) {
       try {
         for (const entry of entries) {
-          await deleteDoc(doc(db, 'entries', entry.id));
+          await deleteDoc(doc(getColRef('entries'), entry.id));
         }
         setEntries([]);
         alert('삭제 완료');
@@ -103,7 +105,7 @@ const AdminMessages = () => {
           date: dateStr,
           timestamp: targetTime
         };
-        await addDoc(collection(db, 'entries'), mockEntry);
+        await addDoc(getColRef('entries'), mockEntry);
       }
       alert('목업 데이터 100개 생성 완료!');
       fetchEntries();

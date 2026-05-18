@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { useTenant } from '../../context/TenantContext';
 
 const AdminNoticeManager = () => {
+  const { getColRef, tenantId } = useTenant();
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -11,11 +13,11 @@ const AdminNoticeManager = () => {
 
   useEffect(() => {
     fetchNotices();
-  }, []);
+  }, [tenantId]);
 
   const fetchNotices = async () => {
     try {
-      const q = query(collection(db, 'notices'), orderBy('createdAt', 'desc'));
+      const q = query(getColRef('notices'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setNotices(list);
@@ -33,7 +35,7 @@ const AdminNoticeManager = () => {
   const confirmDelete = async () => {
     if (!deleteTargetId) return;
     try {
-      await deleteDoc(doc(db, 'notices', deleteTargetId));
+      await deleteDoc(doc(getColRef('notices'), deleteTargetId));
       setDeleteTargetId(null);
       await fetchNotices();
       alert('삭제되었습니다.');
@@ -55,7 +57,7 @@ const AdminNoticeManager = () => {
 
   const handleUpdate = async () => {
     try {
-      await updateDoc(doc(db, 'notices', editingId), editForm);
+      await updateDoc(doc(getColRef('notices'), editingId), editForm);
       setEditingId(null);
       fetchNotices();
       alert('수정되었습니다.');

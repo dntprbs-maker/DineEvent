@@ -14,6 +14,7 @@ import Event from './pages/Event'
 import Location from './pages/Location'
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { TenantProvider, useTenant } from './context/TenantContext';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout'
@@ -28,6 +29,12 @@ import AdminDashboardV2 from './pages/admin/AdminDashboardV2' // [NEW] 프리미
 import AdminDashboardV3 from './pages/admin/AdminDashboardV3' // [NEW] 기존 디자인 기반 레이아웃 재배치 (V3)
 import AdminDashboardV4 from './pages/admin/AdminDashboardV4' // [NEW] 최종 레이아웃 완벽 재현 (V4)
 
+// [NEW] 슈퍼관리자 및 B2B 소개/포털 페이지 임포트
+import SuperAdmin from './pages/SuperAdmin'
+import OriginalIntro from './pages/OriginalIntro'
+import CompanyIntro from './pages/CompanyIntro'
+import ClassicIntro from './pages/ClassicIntro'
+
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   React.useEffect(() => {
@@ -36,7 +43,22 @@ const ScrollToTop = () => {
   return null;
 };
 
-// 스와이프 내비게이션 핸들러 (개선된 영역 격리 로직)
+// [NEW] 외부 회사 소개 페이지로 안전하게 이동시켜주는 리다이렉트 헬퍼 컴포넌트
+const ExternalRedirect = ({ url }) => {
+  React.useEffect(() => {
+    window.location.replace(url);
+  }, [url]);
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white">
+      <div className="text-center space-y-4">
+        <div className="w-12 h-12 border-4 border-[#c5a059] border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="text-sm font-bold text-[#c5a059] tracking-wide animate-pulse">회사 소개 페이지로 이동 중입니다...</p>
+      </div>
+    </div>
+  );
+};
+
+// 스와이프 내비게이션 핸들러 (개선된 영역 격리 로직 - 멀티 테넌트 동적 지원)
 const SwipeNavigation = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,13 +69,17 @@ const SwipeNavigation = ({ children }) => {
   const normalizePath = (path) => path.replace(/\/$/, '') || '/';
   const currentPath = normalizePath(location.pathname);
 
-  // 내비게이션 세트 (관리자에서 menu 제외)
+  // 테넌트 ID 및 어드민 여부 동적 분석
+  const pathParts = currentPath.split('/').filter(Boolean);
+  const tenantId = pathParts[0] || 'dine-event';
+  const isAdmin = pathParts[1] === 'admin';
+
+  // 테넌트 맞춤형 내비게이션 세트 실시간 구성
   const sets = {
-    public: ['/', '/menu', '/event', '/location'],
-    admin: ['/admin/info', '/admin/event', '/admin/messages']
+    public: [`/${tenantId}`, `/${tenantId}/menu`, `/${tenantId}/event`, `/${tenantId}/location`],
+    admin: [`/${tenantId}/admin/info`, `/${tenantId}/admin/event`, `/${tenantId}/admin/messages`]
   };
 
-  const isAdmin = currentPath.startsWith('/admin');
   const activeSet = isAdmin ? sets.admin : sets.public;
   const minSwipeDistance = isAdmin ? 100 : 70;
 
@@ -114,22 +140,38 @@ const GlobalStyle = () => (
   `}} />
 );
 
-// [NEW] Root Layout for Public Pages
+// [NEW] Root Layout for Public Pages (with TenantProvider)
 const RootLayout = () => {
-  const location = useLocation();
-  const [brandName, setBrandName] = useState('EVENT ROULETTE');
+  return (
+    <TenantProvider>
+      <RootLayoutInner />
+    </TenantProvider>
+  );
+};
 
-  useEffect(() => {
-    const fetchBrand = async () => {
-      try {
-        const homeDoc = await getDoc(doc(db, 'settings', 'home'));
-        if (homeDoc.exists() && homeDoc.data().brandName) setBrandName(homeDoc.data().brandName);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchBrand();
-  }, []);
+const RootLayoutInner = () => {
+  const location = useLocation();
+  const { tenantConfig, tenantId, tenantMeta } = useTenant();
+
+  // [NEW] 매장 정지 시 차단 화면 송출
+  if (tenantMeta?.status === 'suspended') {
+    return (
+      <div style={{
+        background: '#0a0a0a', color: '#fff', minHeight: '100vh', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', fontFamily: "system-ui, sans-serif",
+        flexDirection: 'column', padding: '2rem', textAlign: 'center'
+      }}>
+        <span style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🔒</span>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#C5A059', marginBottom: '1rem' }}>
+          서비스 점검 및 이용 제한 안내
+        </h2>
+        <p style={{ color: '#888', maxWidth: '400px', lineHeight: 1.6, margin: '0 0 2rem 0', wordBreak: 'keep-all' }}>
+          현재 본 매장(ID: {tenantId})의 서비스 이용 기간이 만료되었거나 정지 조치되었습니다. 상세 문의는 마스터 관리자에게 문의해 주세요.
+        </p>
+        <a href="/dine-event" style={{ color: '#fff', textDecoration: 'underline', fontSize: '0.9rem' }}>데모 페이지로 돌아가기</a>
+      </div>
+    );
+  }
 
   return (
     <SwipeNavigation>
@@ -142,12 +184,12 @@ const RootLayout = () => {
         </main>
         <footer className="app-footer" style={{ padding: '4rem 2rem', textAlign: 'center', borderTop: '1px solid #111', background: '#000' }}>
           <p className="footer-copyright" style={{ color: '#444', fontSize: '0.85rem', maxWidth: '300px', margin: '0 auto' }}>
-            &copy; {new Date().getFullYear()} {brandName}. All rights reserved.
+            &copy; {new Date().getFullYear()} {tenantConfig.brandNameKr || tenantConfig.brandName || '다인이벤트'}. All rights reserved.
           </p>
-          {location.pathname === '/' && (
+          {location.pathname === `/${tenantId}` && (
             <div style={{ marginTop: '1.5rem' }}>
               <a 
-                href="/admin" 
+                href={`/${tenantId}/admin`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="admin-open-link"
@@ -165,19 +207,65 @@ const RootLayout = () => {
   );
 };
 
-// [NEW] Admin Root to bypass Navbar/Footer
+// [NEW] Admin Root to bypass Navbar/Footer (with TenantProvider)
 const AdminRoot = () => (
-  <SwipeNavigation>
-    <div className="admin-app">
-      <GlobalStyle />
-      <AdminLayout />
-    </div>
-  </SwipeNavigation>
+  <TenantProvider>
+    <AdminRootInner />
+  </TenantProvider>
 );
+
+const AdminRootInner = () => {
+  const { tenantId, tenantMeta } = useTenant();
+
+  // [NEW] 매장 정지 시 관리센터 접근 원천 차단
+  if (tenantMeta?.status === 'suspended') {
+    return (
+      <div style={{
+        background: '#0a0a0a', color: '#fff', minHeight: '100vh', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', fontFamily: "system-ui, sans-serif",
+        flexDirection: 'column', padding: '2rem', textAlign: 'center'
+      }}>
+        <span style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🔒</span>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#ff4d4d', marginBottom: '1rem' }}>
+          관리 센터 진입 제한
+        </h2>
+        <p style={{ color: '#888', maxWidth: '400px', lineHeight: 1.6, margin: '0 0 2rem 0', wordBreak: 'keep-all' }}>
+          해당 가맹점(ID: {tenantId})은 현재 서비스 정지 상태입니다. 마스터 시스템에서 서비스를 활성화해야 관리 센터 진입이 가능합니다.
+        </p>
+        <a href={`/${tenantId}`} style={{ color: '#fff', textDecoration: 'underline', fontSize: '0.9rem' }}>홈페이지로 돌아가기</a>
+      </div>
+    );
+  }
+
+  return (
+    <SwipeNavigation>
+      <div className="admin-app">
+        <GlobalStyle />
+        <AdminLayout />
+      </div>
+    </SwipeNavigation>
+  );
+};
 
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <OriginalIntro />
+  },
+  {
+    path: "/premium-intro",
+    element: <ExternalRedirect url="https://dntprbs-event-roulette.netlify.app/" />
+  },
+  {
+    path: "/classic-intro",
+    element: <ExternalRedirect url="https://dntprbs-event-roulette.netlify.app/" />
+  },
+  {
+    path: "/master-admin",
+    element: <SuperAdmin />
+  },
+  {
+    path: "/:tenantId",
     element: <RootLayout />,
     children: [
       { index: true, element: <Home /> },
@@ -187,10 +275,10 @@ const router = createBrowserRouter([
     ]
   },
   {
-    path: "/admin",
+    path: "/:tenantId/admin",
     element: <AdminRoot />,
     children: [
-      { index: true, element: <Navigate to="/admin/info" replace /> },
+      { index: true, element: <Navigate to="info" replace /> },
       { path: "info", element: <AdminInfo /> },
       // { path: "menu", element: <AdminMenu /> }, // [제거]
       { path: "event", element: <AdminEvent /> },
@@ -210,3 +298,4 @@ function App() {
 }
 
 export default App
+

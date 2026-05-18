@@ -2,44 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import heroImg from '../assets/hero.png';
 import { db } from '../firebase';
-import { doc, getDoc, collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { query, orderBy, onSnapshot } from 'firebase/firestore';
+import { useTenant } from '../context/TenantContext';
 
 const Home = () => {
-  const [settings, setSettings] = useState({ 
-    brandName: '이벤트룰렛',
-    topLabel: 'PREMIUM DINING EXPERIENCE',
-    title: '특별한 미식 축제에 초대합니다', 
-    subtitle: '최고급 식재료와 셰프의 장인정신이 깃든 시즌 메뉴를 지금 바로 만나보세요.',
-    heroImage: ''
-  });
+  const { tenantConfig, tenantId, getColRef } = useTenant();
   
   const [activeNotices, setActiveNotices] = useState([]);
   const [showNoticePopup, setShowNoticePopup] = useState(false);
   const [dontShowToday, setDontShowToday] = useState(false); // [NEW] 체크박스 상태 추가
 
   useEffect(() => {
-    const fetchHome = async () => {
-      try {
-        const homeDoc = await getDoc(doc(db, 'settings', 'home'));
-        if (homeDoc.exists()) {
-          const data = homeDoc.data();
-          setSettings(prev => ({
-            ...prev,
-            brandName: data.brandName || prev.brandName,
-            topLabel: data.topLabel || prev.topLabel,
-            title: data.title || prev.title,
-            subtitle: data.subtitle || prev.subtitle,
-            heroImage: data.heroImage || ''
-          }));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchHome();
-
-    // 2. 공지사항 실시간 구독 (onSnapshot 사용으로 삭제/수정 즉시 반영)
-    const q = query(collection(db, 'notices'), orderBy('createdAt', 'desc'));
+    // 2. 공지사항 실시간 구독 (onSnapshot 사용으로 삭제/수정 즉시 반영 - 테넌트 격리형)
+    const noticesColRef = getColRef('notices');
+    const q = query(noticesColRef, orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allNotices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
@@ -61,8 +37,8 @@ const Home = () => {
       
       setActiveNotices(sorted);
       
-      // [MOD] 오늘 하루 보지 않기 체크 로직 추가
-      const hideUntil = localStorage.getItem('hideNoticeUntil');
+      // [MOD] 오늘 하루 보지 않기 체크 로직 추가 (테넌트 고유 키로 분리하여 관리)
+      const hideUntil = localStorage.getItem(`hideNoticeUntil_${tenantId}`);
       const today = new Date().toLocaleDateString();
       
       if (sorted.length > 0 && hideUntil !== today) {
@@ -75,15 +51,15 @@ const Home = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
-  const displayImage = settings.heroImage || heroImg;
+  const displayImage = tenantConfig.heroImage || heroImg;
 
   // [NEW] 확인 버튼 클릭 핸들러
   const handleNoticeConfirm = () => {
     if (dontShowToday) {
       const today = new Date().toLocaleDateString();
-      localStorage.setItem('hideNoticeUntil', today);
+      localStorage.setItem(`hideNoticeUntil_${tenantId}`, today);
     }
     setShowNoticePopup(false);
   };
@@ -113,7 +89,7 @@ const Home = () => {
           display: 'block',
           textShadow: '0 0 10px rgba(197, 160, 89, 0.5)' 
         }}>
-          {settings.topLabel}
+          {tenantConfig.topLabel || 'PREMIUM DINING EXPERIENCE'}
         </span>
 
         {/* 1. 식당 이름: 좁은 화면에서도 넘치지 않도록 clamp 적용 */}
@@ -132,7 +108,7 @@ const Home = () => {
             filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))',
             wordBreak: 'keep-all'
           }}>
-            {settings.brandName}
+            {tenantConfig.brandNameKr || tenantConfig.brandName || '다인이벤트'}
           </h2>
         </div>
 
@@ -143,7 +119,7 @@ const Home = () => {
           lineHeight: '1.3',
           wordBreak: 'keep-all'
         }}>
-          {settings.title}
+          {tenantConfig.title || '특별한 미식 축제에 초대합니다'}
         </h1>
         <p className="hero-subtitle fade-in" style={{ 
           fontSize: 'clamp(0.85rem, 3vw, 1.1rem)', 
@@ -153,11 +129,11 @@ const Home = () => {
           opacity: 0.9,
           padding: '0 1rem'
         }}>
-          {settings.subtitle}
+          {tenantConfig.subtitle || '최고급 식재료와 셰프의 장인정신이 깃든 시즌 메뉴를 지금 바로 만나보세요.'}
         </p>
         
         <div className="fade-in">
-          <Link to="/event" className="btn-primary" style={{ 
+          <Link to={`/${tenantId}/event`} className="btn-primary" style={{ 
             textDecoration: 'none', 
             display: 'inline-block', 
             padding: 'clamp(0.9rem, 3vw, 1.4rem) clamp(2.5rem, 8vw, 5rem)', 
