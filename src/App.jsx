@@ -35,6 +35,7 @@ import OriginalIntro from './pages/OriginalIntro'
 import CompanyIntro from './pages/CompanyIntro'
 import ClassicIntro from './pages/ClassicIntro'
 import NewLanding from './pages/NewLanding'
+import WorkshopIntro from './pages/WorkshopIntro' // [NEW] 작업용 복사 페이지
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -252,6 +253,11 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <OriginalIntro />
+  },
+  {
+    // [NEW] 작업용 복사 페이지 (OriginalIntro 완전 복사본)
+    path: "/workshop",
+    element: <WorkshopIntro />
   },
   {
     path: "/new-landing",
