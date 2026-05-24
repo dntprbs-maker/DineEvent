@@ -4,16 +4,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 /**
  * NewLanding.jsx
  * 
- * 주인님의 "글씨가 카드 테두리에 너무 꽉 들어찬다"는 스크린샷 피드백을 수용하여 폰트 크기 및 요소 간 여백을 정밀 튜닝했습니다.
+ * 프로젝트명(서비스명)을 'DineEvent'에서 'Event Roulette'으로 전면 수정했습니다.
+ * 사용자가 실 서비스명과 프로젝트명의 불일치로 겪는 혼선을 제거했습니다.
  * 
- * 1. 폰트 스케일 소폭 하향 (안정적인 글씨 크기):
- *    - 메인 타이틀: 기존 `text-6xl` (너무 비대함) ➔ `text-3xl md:text-4xl lg:text-5xl`로 하향 조정하여 텍스트의 과도한 밀림 방지.
- *    - 서브 텍스트: 기존 `text-lg` ➔ `text-sm md:text-base`로 줄이고 텍스트 박스 내부 패딩을 `p-10` ➔ `p-6 md:p-8`로 쾌적하게 축소.
- *    - 액션 버튼 및 뱃지: 크기를 소폭 줄여 카드 경계면과의 충돌을 방지.
- * 
- * 2. 카드 내부 세로 밀집도 완화 (Balanced Spacing):
- *    - 히어로 카드의 수직 마진을 `space-y-12` ➔ `space-y-6 md:space-y-8`로 합리적으로 조절하여 위아래 테두리에 글씨가 닿는 현상을 제거.
- *    - 윈도우 해상도별 카드 패딩을 `px-8 py-12 md:px-16 md:py-20 lg:px-20 lg:py-24`로 개별 할당하여 좌우 테두리가 찌그러지는 현상 방지.
+ * * 내부 동작 경로 파라미터(tenantId)의 기본값은 Firestore 데이터 보존을 위해 'dine-event'를 유지하되,
+ *   화면에 표시되는 모든 브랜드 텍스트, 로고 및 회사 기본값은 'Event Roulette' 및 '이벤트룰렛'으로 수정했습니다.
  */
 const NewLanding = () => {
   const navigate = useNavigate();
@@ -28,8 +23,8 @@ const NewLanding = () => {
   };
 
   return (
-    <div className="new-landing-container min-h-screen pb-36" style={{
-      backgroundColor: '#020202', // 다크 테마 고수
+    <div className="new-landing-container min-h-screen pb-48" style={{
+      backgroundColor: '#020202', // 프리미엄 다크 블랙
       color: '#ffffff',
       fontFamily: "'Pretendard', 'Outfit', sans-serif",
       overflowX: 'hidden'
@@ -37,17 +32,17 @@ const NewLanding = () => {
       
       {/* ── 1. 프리미엄 헤더 (Sticky Navigation) ── */}
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-[rgba(197,160,89,0.25)] bg-[rgba(2,2,2,0.92)] shadow-lg">
-        <div className="max-w-7xl mx-auto px-10 h-20 flex items-center justify-between">
-          {/* 로고 */}
+        <div className="max-w-7xl mx-auto px-10 h-24 flex items-center justify-between">
+          {/* 로고: DineEvent -> Event Roulette 로 변경 */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
             <span className="text-2xl animate-pulse">🎡</span>
-            <span className="text-xl font-black tracking-wider bg-gradient-to-r from-white via-[#e5c17b] to-[#c5a059] bg-clip-text text-transparent">
-              DineEvent
+            <span className="text-2xl font-black tracking-wider bg-gradient-to-r from-white via-[#e5c17b] to-[#c5a059] bg-clip-text text-transparent">
+              Event Roulette
             </span>
           </div>
 
           {/* 중앙 네비게이션 */}
-          <nav className="hidden md:flex items-center gap-10 text-sm font-bold text-gray-200">
+          <nav className="hidden md:flex items-center gap-12 text-sm font-bold text-gray-200">
             <a href="#features" className="hover:text-[#c5a059] transition-colors duration-300">서비스 기능</a>
             <a href="#solutions" className="hover:text-[#c5a059] transition-colors duration-300">이벤트 솔루션</a>
             <a href="#pricing" className="hover:text-[#c5a059] transition-colors duration-300">이용 플랜</a>
@@ -59,13 +54,13 @@ const NewLanding = () => {
           <div className="flex items-center gap-6">
             <button 
               onClick={handleGoAdmin}
-              className="text-xs md:text-sm font-bold text-gray-300 hover:text-[#c5a059] transition-colors duration-300"
+              className="text-xs md:text-sm font-bold text-gray-400 hover:text-[#c5a059] transition-colors duration-300"
             >
               로그인
             </button>
             <button 
               onClick={handleGoDemo}
-              className="px-6 py-2.5 text-xs md:text-sm font-black rounded-full text-black bg-gradient-to-r from-[#fceabb] via-[#fccd4d] to-[#f8b500] border border-[#ffeb3b] shadow-[0_0_15px_rgba(255,215,0,0.25)] hover:scale-105 hover:shadow-[0_0_25px_rgba(255,215,0,0.4)] transition-all duration-300 cursor-pointer"
+              className="px-8 py-3.5 text-xs md:text-sm font-black rounded-full text-black bg-gradient-to-r from-[#fceabb] via-[#fccd4d] to-[#f8b500] border border-[#ffeb3b] shadow-[0_0_20px_rgba(255,215,0,0.25)] hover:scale-105 hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition-all duration-300 cursor-pointer"
             >
               무료로 시작하기
             </button>
@@ -74,35 +69,35 @@ const NewLanding = () => {
       </header>
 
       {/* ── 본문 카드 리스트 (웅장한 간격 유지) ── */}
-      <div className="max-w-7xl mx-auto px-8 mt-16 space-y-28 md:space-y-36">
+      <div className="max-w-7xl mx-auto px-10 mt-24 space-y-36 md:space-y-44">
 
-        {/* ── 2. 히어로 섹션 (럭셔리 입체 글래스 카드 - 패딩 및 폰트 크기 튜닝 완료) ── */}
-        <section className="relative overflow-hidden bg-[rgba(26,26,26,0.92)] backdrop-blur-3xl border border-[rgba(197,160,89,0.32)] border-t-4 border-t-[#c5a059] rounded-[48px] px-8 py-12 md:px-16 md:py-20 lg:px-20 lg:py-24 shadow-[0_50px_100px_rgba(0,0,0,0.98),0_0_70px_rgba(197,160,89,0.08)]">
+        {/* ── 2. 히어로 섹션 (럭셔리 입체 글래스 카드) ── */}
+        <section className="relative overflow-hidden bg-[rgba(26,26,26,0.92)] backdrop-blur-3xl border border-[rgba(197,160,89,0.32)] border-t-4 border-t-[#c5a059] rounded-[64px] px-8 py-12 md:px-16 md:py-20 lg:px-20 lg:py-24 shadow-[0_50px_100px_rgba(0,0,0,0.98),0_0_70px_rgba(197,160,89,0.08)]">
           {/* 금빛 성운 배경 장식 */}
           <div className="absolute -top-[300px] -left-[300px] w-[600px] h-[600px] bg-[rgba(197,160,89,0.12)] rounded-full blur-[160px] pointer-events-none"></div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10">
-            {/* 왼쪽: 텍스트 및 조작 버튼 (세로 마진 축소 space-y-6 md:space-y-8) */}
+            {/* 왼쪽: 텍스트 및 조작 버튼 */}
             <div className="lg:col-span-6 space-y-6 md:space-y-8 text-left">
               <div className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black text-[#c5a059] bg-[rgba(197,160,89,0.12)] border border-[rgba(197,160,89,0.35)] tracking-widest uppercase">
                 👑 PREMIUM EVENT PLATFORM
               </div>
               
-              {/* 타이틀 크기 축소 (text-5xl로 하향) */}
+              {/* DineEvent -> Event Roulette 로 변경 */}
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white leading-[1.2] tracking-tight">
                 이벤트를 성장시키는<br />
                 가장 스마트한<br />
                 <span className="bg-gradient-to-r from-[#fceabb] via-[#fccd4d] to-[#f8b500] bg-clip-text text-transparent">
-                  이벤트 솔루션
+                  이벤트 룰렛 솔루션
                 </span>
               </h1>
 
-              {/* 본문 설명 카드 패딩 축소 (p-10 -> p-6 md:p-8) 및 크기 축소(text-base) */}
+              {/* DineEvent -> Event Roulette 로 변경 */}
               <div className="bg-[rgba(0,0,0,0.45)] border border-[rgba(255,255,255,0.08)] rounded-[20px] p-6 md:p-8 text-gray-200 font-medium text-sm md:text-base leading-relaxed word-break-keep-all shadow-inner">
-                🚀 복잡한 오프라인 이벤트 등록과 실시간 당첨 통계 제어는 혁신적으로 단축하고, 매장 방문 단골 고객 응대에만 완벽히 집중해 보세요. DineEvent가 차별화된 가맹점 성장을 약속합니다.
+                🚀 복잡한 오프라인 이벤트 등록과 실시간 당첨 통계 제어는 혁신적으로 단축하고, 매장 방문 단골 고객 응대에만 완벽히 집중해 보세요. Event Roulette이 차별화된 가맹점 성장을 약속합니다.
               </div>
 
-              {/* 액션 버튼 그룹 크기 소폭 조율 */}
+              {/* 액션 버튼 그룹 */}
               <div className="flex flex-wrap gap-4 pt-2">
                 <button 
                   onClick={handleGoDemo}
@@ -132,7 +127,6 @@ const NewLanding = () => {
                   <span className="text-[10px] font-black text-[#c5a059] tracking-widest">LIVE DATA STATUS</span>
                 </div>
 
-                {/* 수치 카드 */}
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="bg-[rgba(255,255,255,0.04)] p-4 rounded-xl border border-[rgba(255,255,255,0.08)]">
                     <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">방문자</span>
@@ -165,7 +159,7 @@ const NewLanding = () => {
                 </div>
               </div>
 
-              {/* 모바일 폰 뷰 (우측 하단 - 크기와 여백 최적화) */}
+              {/* 모바일 폰 뷰 */}
               <div className="absolute -bottom-8 -right-8 w-36 bg-[#080808] border-2 border-[rgba(197,160,89,0.4)] rounded-[28px] p-4 shadow-[0_30px_70px_rgba(0,0,0,0.98)] hidden sm:block transform rotate-6 hover:rotate-0 transition-all duration-500">
                 <div className="w-12 h-3 bg-[#222] rounded-full mx-auto mb-4"></div>
                 <div className="h-20 w-20 mx-auto rounded-full border border-dashed border-[#c5a059] flex items-center justify-center animate-[spin_20s_linear_infinite]">
@@ -201,8 +195,8 @@ const NewLanding = () => {
           
           {/* 타이틀 영역 */}
           <div className="text-center space-y-6 max-w-3xl mx-auto">
-            <span className="text-xs font-bold text-[#c5a059] uppercase tracking-widest">WHY DINEEVENT</span>
-            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">왜 DineEvent인가요?</h2>
+            <span className="text-xs font-bold text-[#c5a059] uppercase tracking-widest">WHY EVENT ROULETTE</span>
+            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">왜 Event Roulette인가요?</h2>
             
             <div className="bg-[rgba(0,0,0,0.45)] border border-[rgba(255,255,255,0.08)] rounded-[20px] py-4 px-8 text-white font-semibold text-sm md:text-base leading-relaxed inline-block word-break-keep-all shadow-inner">
               💡 단순한 룰렛 돌리기가 아닙니다. 가맹점 전용 데이터 완전 고립과 실시간 응모 마케팅의 정점을 선사합니다.
@@ -270,7 +264,7 @@ const NewLanding = () => {
                 </h2>
               </div>
               <p className="text-gray-200 font-medium text-xs md:text-sm leading-relaxed word-break-keep-all">
-                세련된 다이닝부터 전국 단위 박람회까지, DineEvent의 고성능 응모 룰렛 엔진이 최고의 마케팅 경험을 드립니다.
+                세련된 다이닝부터 전국 단위 박람회까지, Event Roulette의 고성능 응모 룰렛 엔진이 최고의 마케팅 경험을 드립니다.
               </p>
               <button 
                 onClick={handleGoDemo}
@@ -285,7 +279,7 @@ const NewLanding = () => {
               
               <div className="bg-[rgba(255,255,255,0.04)] p-6 md:p-8 rounded-[24px] border border-[rgba(255,255,255,0.08)] hover:border-[#c5a059] hover:bg-[rgba(197,160,89,0.05)] transition-all duration-300 space-y-4 text-left shadow-lg">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🍽️</span>
+                  <span className="text-3xl">🍽️</span>
                   <h4 className="text-base font-black text-white mt-1">프리미엄 레스토랑</h4>
                 </div>
                 <p className="text-gray-200 font-medium text-xs md:text-sm leading-relaxed word-break-keep-all">특별 코스 기념 식사 상품권 추첨 프로모션으로 로열 고객 확보</p>
@@ -293,40 +287,40 @@ const NewLanding = () => {
 
               <div className="bg-[rgba(255,255,255,0.04)] p-6 md:p-8 rounded-[24px] border border-[rgba(255,255,255,0.08)] hover:border-[#c5a059] hover:bg-[rgba(197,160,89,0.05)] transition-all duration-300 space-y-4 text-left shadow-lg">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🛍️</span>
-                  <h4 className="text-base font-black text-white mt-1">브랜드 팝업스토어</h4>
+                  <span className="text-3xl">🛍️</span>
+                  <h4 className="text-lg font-black text-white mt-1">브랜드 팝업스토어</h4>
                 </div>
                 <p className="text-gray-200 font-medium text-xs md:text-sm leading-relaxed word-break-keep-all">신상품 출시 현장 고객 참여 유도 및 한정판 스페셜 굿즈 당첨 배포</p>
               </div>
 
               <div className="bg-[rgba(255,255,255,0.04)] p-6 md:p-8 rounded-[24px] border border-[rgba(255,255,255,0.08)] hover:border-[#c5a059] hover:bg-[rgba(197,160,89,0.05)] transition-all duration-300 space-y-4 text-left shadow-lg">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🏢</span>
-                  <h4 className="text-base font-black text-white mt-1">기업 행사 & 세미나</h4>
+                  <span className="text-3xl">🏢</span>
+                  <h4 className="text-lg font-black text-white mt-1">기업 행사 & 세미나</h4>
                 </div>
                 <p className="text-gray-200 font-medium text-xs md:text-sm leading-relaxed word-break-keep-all">사내 파티 및 파트너 감사 추첨을 현장에서 모바일로 간편하게 가동</p>
               </div>
 
               <div className="bg-[rgba(255,255,255,0.04)] p-6 md:p-8 rounded-[24px] border border-[rgba(255,255,255,0.08)] hover:border-[#c5a059] hover:bg-[rgba(197,160,89,0.05)] transition-all duration-300 space-y-4 text-left shadow-lg">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">☕</span>
-                  <h4 className="text-base font-black text-white mt-1">프랜차이즈 카페</h4>
+                  <span className="text-3xl">☕</span>
+                  <h4 className="text-lg font-black text-white mt-1">프랜차이즈 카페</h4>
                 </div>
                 <p className="text-gray-200 font-medium text-xs md:text-sm leading-relaxed word-break-keep-all">음료 쿠폰 즉석 회전 룰렛으로 로컬 매장 재방문 비율 대폭 개선</p>
               </div>
 
               <div className="bg-[rgba(255,255,255,0.04)] p-6 md:p-8 rounded-[24px] border border-[rgba(255,255,255,0.08)] hover:border-[#c5a059] hover:bg-[rgba(197,160,89,0.05)] transition-all duration-300 space-y-4 text-left shadow-lg">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🎪</span>
-                  <h4 className="text-base font-black text-white mt-1">대규모 축제 & 박람회</h4>
+                  <span className="text-3xl">🎪</span>
+                  <h4 className="text-lg font-black text-white mt-1">대규모 축제 & 박람회</h4>
                 </div>
                 <p className="text-gray-200 font-medium text-xs md:text-sm leading-relaxed word-break-keep-all">수만 명이 일시에 QR코드로 진입하는 야외 축제에서도 무하중 무중단</p>
               </div>
 
               <div className="bg-[rgba(255,255,255,0.04)] p-6 md:p-8 rounded-[24px] border border-[rgba(255,255,255,0.08)] hover:border-[#c5a059] hover:bg-[rgba(197,160,89,0.05)] transition-all duration-300 space-y-4 text-left shadow-lg">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🏛️</span>
-                  <h4 className="text-base font-black text-white mt-1">공공기관 & 비영리</h4>
+                  <span className="text-3xl">🏛️</span>
+                  <h4 className="text-lg font-black text-white mt-1">공공기관 & 비영리</h4>
                 </div>
                 <p className="text-gray-200 font-medium text-xs md:text-sm leading-relaxed word-break-keep-all">공정성과 신뢰도가 필수적인 응모 데이터 추첨 이력 검증 체계 가동</p>
               </div>
@@ -340,7 +334,7 @@ const NewLanding = () => {
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#c5a059] opacity-[0.08] rounded-full blur-[140px] pointer-events-none"></div>
 
           <h2 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
-            더 나은 이벤트의 시작,<br />지금 DineEvent를 시작하세요!
+            더 나은 이벤트의 시작,<br />지금 Event Roulette을 시작하세요!
           </h2>
           
           <div className="max-w-3xl mx-auto bg-[rgba(0,0,0,0.55)] border border-[rgba(255,255,255,0.1)] rounded-[24px] p-6 md:p-8 shadow-inner">
@@ -374,11 +368,11 @@ const NewLanding = () => {
             <div className="flex items-center gap-2.5">
               <span className="text-xl">🎡</span>
               <span className="text-lg font-black tracking-wider bg-gradient-to-r from-white to-[#c5a059] bg-clip-text text-transparent">
-                DineEvent
+                Event Roulette
               </span>
             </div>
             <p className="text-gray-300 leading-relaxed text-xs md:text-sm max-w-sm word-break-keep-all font-semibold">
-              DineEvent는 오프라인 매장의 성장을 돕는 혁신적인 스마트 이벤트 솔루션입니다. 더 나은 고객 참여를 통해 더 큰 비즈니스 가치를 창출합니다.
+              Event Roulette은 오프라인 매장의 성장을 돕는 혁신적인 스마트 이벤트 솔루션입니다. 더 나은 고객 참여를 통해 더 큰 비즈니스 가치를 창출합니다.
             </p>
           </div>
 
@@ -420,11 +414,11 @@ const NewLanding = () => {
 
         <div className="max-w-7xl mx-auto px-10 mt-16 pt-8 border-t border-[rgba(255,255,255,0.03)] flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
           <p className="text-[10px] text-gray-400 leading-relaxed max-w-xl font-medium">
-            상호명: DineEvent | 대표자: 크린 | 이메일: info@clean-member.com | 전화번호: 02-1234-5678<br />
+            상호명: Event Roulette | 대표자: 크린 | 이메일: info@clean-member.com | 전화번호: 02-1234-5678<br />
             주소: 서울특별시 강남구 테헤란로 123 | 사업자등록번호: 120-00-00000
           </p>
           <p className="text-[10px] text-gray-400 font-bold">
-            &copy; {new Date().getFullYear()} DineEvent. All rights reserved.
+            &copy; {new Date().getFullYear()} Event Roulette. All rights reserved.
           </p>
         </div>
       </footer>
