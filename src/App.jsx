@@ -34,6 +34,7 @@ import SuperAdmin from './pages/SuperAdmin'
 import OriginalIntro from './pages/OriginalIntro'
 import CompanyIntro from './pages/CompanyIntro'
 import ClassicIntro from './pages/ClassicIntro'
+import NewLanding from './pages/NewLanding'
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -251,6 +252,14 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <OriginalIntro />
+  },
+  {
+    path: "/new-landing",
+    element: <NewLanding />
+  },
+  {
+    path: "/:tenantId/new-landing",
+    element: <NewLanding />
   },
   {
     path: "/premium-intro",
