@@ -49,7 +49,7 @@ const OriginalIntro = () => {
   ];
 
   const demoStores = [
-    { id: 'dine-event', name: '이벤트룰렛 다인점 🍽️', desc: '고품격 다이닝 테마의 레거시 데모 스토어' },
+    { id: 'dine-event', name: '이벤트 룰렛 다인점 🍽️', desc: '고품격 다이닝 테마의 레거시 데모 스토어' },
     { id: 'starbucks', name: '스타벅스 강남점 ☕', desc: '커피쿠폰 및 프리미엄 MD 위주 기획 스토어' },
     { id: 'bbq', name: 'BBQ 치킨 명동점 🍗', desc: '치킨 기프티콘 및 사이드 메뉴 교환권 스토어' }
   ];
@@ -76,7 +76,7 @@ const OriginalIntro = () => {
             background: 'linear-gradient(135deg, #fff 30%, var(--primary) 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
           }}>
-            이벤트룰렛
+            이벤트 룰렛
           </span>
         </div>
         <div style={{ display: 'flex', gap: '15px' }}>

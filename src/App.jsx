@@ -185,7 +185,7 @@ const RootLayoutInner = () => {
         </main>
         <footer className="app-footer" style={{ padding: '4rem 2rem', textAlign: 'center', borderTop: '1px solid #111', background: '#000' }}>
           <p className="footer-copyright" style={{ color: '#444', fontSize: '0.85rem', maxWidth: '300px', margin: '0 auto' }}>
-            &copy; {new Date().getFullYear()} {tenantConfig.brandNameKr || tenantConfig.brandName || '이벤트룰렛'}. All rights reserved.
+            &copy; {new Date().getFullYear()} {tenantConfig.brandNameKr || tenantConfig.brandName || '이벤트 룰렛'}. All rights reserved.
           </p>
           {location.pathname === `/${tenantId}` && (
             <div style={{ marginTop: '1.5rem' }}>
