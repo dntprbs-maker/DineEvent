@@ -1,0 +1,885 @@
+/* ================================================================
+   CompanyIntroV2.css — 순수 CSS (Tailwind 비의존)
+   모든 클래스에 .v2- 접두사를 사용하여 글로벌 CSS 충돌 방지
+   ================================================================ */
+
+/* ── 기본 리셋 & 레이아웃 ── */
+.v2-root {
+  background: #0a0a0a;
+  color: #ffffff;
+  min-height: 100vh;
+  min-width: 320px;
+  padding-bottom: 0;
+  overflow-x: hidden;
+  font-family: 'Pretendard', 'Outfit', system-ui, sans-serif;
+  line-height: 1.6;
+  position: relative;
+}
+
+.v2-root *, .v2-root *::before, .v2-root *::after {
+  box-sizing: border-box;
+}
+
+.v2-root ::selection {
+  background: #c5a059;
+  color: #000;
+}
+
+.v2-root h1, .v2-root h2, .v2-root h3, .v2-root h4 {
+  letter-spacing: -0.02em;
+  font-weight: 900;
+  margin: 0;
+}
+
+.v2-root p { margin: 0; }
+.v2-root a { text-decoration: none; color: inherit; }
+.v2-root ul { list-style: none; padding: 0; margin: 0; }
+.v2-root button { font-family: inherit; }
+
+/* ── 배경 후광 그래디언트 ── */
+.v2-glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 80rem;
+  height: 600px;
+  background: radial-gradient(circle at top, rgba(197,160,89,0.08), transparent 70%);
+  pointer-events: none;
+}
+
+/* ── [1] 헤더 (Fixed Nav) ── */
+.v2-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(10,10,10,0.9);
+}
+
+.v2-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+}
+
+.v2-nav-logo-icon { font-size: 1.5rem; }
+
+.v2-nav-logo-text {
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  background: linear-gradient(to right, #fff, #c5a059);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.v2-nav-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.v2-nav-link {
+  color: #a3a3a3;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.v2-nav-link:hover { color: #fff; }
+
+/* 스크롤 스파이 활성 상태: 현재 보이는 섹션과 일치하는 메뉴 강조 */
+.v2-nav-link--active {
+  color: #c5a059 !important;           /* 골드 색상으로 전환 */
+  position: relative;
+}
+
+.v2-nav-link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #c5a059, #f0c070); /* 골드 그라디언트 밑줄 */
+  border-radius: 2px;
+  animation: navUnderlineIn 0.25s ease forwards; /* 부드러운 등장 애니메이션 */
+}
+
+@keyframes navUnderlineIn {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* ── [2] 히어로 섹션 ── */
+.v2-hero {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 88px 1.5rem 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v2-hero-inner {
+  text-align: center;
+  max-width: 48rem;
+}
+
+.v2-badge {
+  display: inline-block;
+  background: rgba(197,160,89,0.1);
+  border: 1px solid #c5a059;
+  border-radius: 9999px;
+  padding: 0.25rem 1rem;
+  color: #c5a059;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.5rem;
+}
+
+.v2-hero-title {
+  font-size: clamp(1.6rem, 6vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin-bottom: 1.5rem;
+}
+
+.v2-hero-gradient {
+  background: linear-gradient(to right, #fceabb, #fccd4d, #f8b500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.v2-hero-sub {
+  color: #a3a3a3;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.7;
+}
+
+.v2-hero-highlight {
+  background: rgba(23,23,23,0.8);
+  border: 1px solid rgba(197,160,89,0.3);
+  border-radius: 1rem;
+  padding: 1rem 1.5rem;
+  color: #c5a059;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.7;
+  width: 100%;
+}
+
+/* ── 워크플로우 이미지 ── */
+.v2-workflow {
+  margin-top: 6rem;
+  width: 100%;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.v2-workflow-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.v2-workflow-title {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.v2-workflow-desc {
+  color: #a3a3a3;
+  font-size: 0.875rem;
+}
+
+.v2-workflow-img-wrap {
+  margin-top: 2rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.v2-workflow-img {
+  width: 100%;
+  max-width: 64rem;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 25px 25px rgba(0,0,0,0.5));
+}
+
+/* ── [4] 업종별 활용 사례 ── */
+.v2-section {
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 8rem; /* 하단 여백 확보로 다음 섹션과 충분한 간격 유지 */
+}
+
+.v2-section-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.v2-section-title {
+  font-size: 1.875rem;
+  margin-bottom: 1rem;
+}
+
+.v2-section-desc {
+  color: #a3a3a3;
+  font-size: 0.875rem;
+  max-width: 36rem;
+  margin: 0 auto;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* 4열 카드 그리드 */
+.v2-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.v2-case-card {
+  background: rgba(255,255,255,0.01);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 24px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+  min-height: 400px; /* 카드 최소 높이 고정 — 내용이 적어도 일정 높이 유지 */
+}
+
+.v2-case-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(197,160,89,0.3);
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
+
+.v2-case-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.v2-case-goal {
+  font-size: 11px;
+  color: #fff;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  /* 제목 아이콘 뒤 텍스트 시작점에 맞춰 블록 전체 들여쓰기 */
+  padding-left: 3em;   /* = 블록 이동(1.6em) + 행잉 인덴트 공간(1.4em) */
+  text-indent: -1.4em; /* 🎯 아이콘은 행잉 인덴트로 첫 줄만 당겨냄 */
+}
+
+.v2-case-desc {
+  font-size: 0.75rem;
+  color: #d4d4d4;
+  line-height: 1.7;
+  margin-bottom: 2.25rem; /* 설명 텍스트와 경품 박스 사이 여백 */
+}
+
+.v2-case-prize {
+  background: rgba(255,255,255,0.05);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.v2-case-prize-label {
+  font-size: 10px;
+  color: #737373;
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+.v2-case-prize-text {
+  font-size: 0.75rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.v2-case-btn {
+  width: 100%;
+  padding: 0.625rem;
+  border-radius: 0.75rem;
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.v2-case-btn:hover {
+  background: #c5a059;
+  color: #000;
+  border-color: transparent;
+}
+
+/* 색상 테마 */
+.v2-color-gold { color: #c5a059; }
+.v2-color-emerald { color: #34d399; }
+.v2-color-orange { color: #fb923c; }
+.v2-color-violet { color: #a78bfa; }
+
+/* ── [6] 핵심 기술 섹션 ── */
+.v2-section-narrow {
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem 10rem; /* 핵심기능 섹션 하단 여백 — 요금제 섹션과 간격 확보 */
+}
+
+.v2-section-title-sm {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.v2-section-desc-sm {
+  color: #a3a3a3;
+  font-size: 0.75rem;
+}
+
+.v2-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.v2-feat-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(197,160,89,0.1);
+  border-radius: 1rem;
+  overflow: hidden;              /* 이미지가 카드 모서리 밖으로 나가지 않도록 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+}
+
+/* 카드 상단 이미지 래퍼 */
+.v2-feat-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 160px;                 /* 이미지 영역 고정 높이 */
+  overflow: hidden;
+}
+
+/* 카드 일러스트 이미지 */
+.v2-feat-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;             /* 이미지를 영역에 꽉 채움 */
+  object-position: center;
+  display: block;
+}
+
+/* 배지 — 이미지 우상단에 오버레이 */
+.v2-feat-badge--overlay {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+}
+
+/* 이미지 아래 텍스트 영역 패딩 */
+.v2-feat-body {
+  padding: 1rem 1.25rem 0;
+}
+
+.v2-feat-card:hover {
+  transform: translateY(-3px);
+  border-color: #c5a059;
+  box-shadow: 0 10px 20px rgba(197,160,89,0.08);
+}
+
+.v2-feat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.v2-feat-icon { font-size: 1.5rem; }
+
+.v2-feat-badge {
+  font-size: 9px;
+  color: #c5a059;
+  background: rgba(197,160,89,0.1);
+  border: 1px solid rgba(197,160,89,0.3);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 900;
+}
+
+.v2-feat-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.v2-feat-desc {
+  color: #a3a3a3;
+  font-size: 11px;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+
+.v2-feat-benefit {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 10px;
+  font-weight: 900;
+  color: #c5a059;
+  padding: 0.75rem 1.25rem 1rem; /* 카드 하단 텍스트 내부 여백 */
+}
+
+.v2-feat-benefit-text { color: #fff; }
+
+/* 핵심기능 섹션 하단 배너 이미지 */
+.v2-feat-banner-wrap {
+  margin-top: 3rem;
+  width: 100%;
+}
+
+.v2-feat-banner-img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 1rem;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+}
+
+
+/* ── [7] 요금제 ── */
+.v2-pricing {
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.v2-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  align-items: stretch;
+  margin-bottom: 4rem;
+}
+
+.v2-price-card {
+  border-radius: 28px;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s;
+  background: rgba(255,255,255,0.015);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.v2-price-card:hover { transform: translateY(-5px); }
+
+.v2-price-card--popular {
+  background: rgba(197,160,89,0.1);
+  border: 2px solid #c5a059;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
+
+.v2-price-ribbon {
+  position: absolute;
+  top: 16px;
+  right: -35px;
+  background: #c5a059;
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 0.25rem 2.25rem;
+  transform: rotate(45deg);
+  letter-spacing: 0.05em;
+}
+
+.v2-price-name {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.v2-price-amount {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #c5a059;
+  margin-bottom: 2rem;
+}
+
+.v2-price-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.v2-price-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #a3a3a3;
+}
+
+.v2-price-check {
+  color: #c5a059;
+  font-weight: 700;
+}
+
+.v2-price-cta {
+  display: block;
+  width: 100%;
+  padding: 0.875rem;
+  margin-top: 2.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  text-decoration: none;
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.v2-price-cta:hover { background: rgba(255,255,255,0.1); }
+
+.v2-price-cta--gold {
+  background: linear-gradient(to right, #fceabb, #fccd4d, #f8b500);
+  color: #000;
+  border: none;
+}
+
+.v2-price-cta--gold:hover { filter: brightness(1.1); }
+
+/* ── [8] FAQ 아코디언 ── */
+.v2-faq {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 5rem 1.5rem;
+}
+
+.v2-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.v2-faq-item {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.v2-faq-item--open {
+  border-color: #c5a059;
+}
+
+.v2-faq-question {
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.v2-faq-item--open .v2-faq-question {
+  background: rgba(197,160,89,0.05);
+}
+
+.v2-faq-q-text {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.v2-faq-item--open .v2-faq-q-text {
+  color: #c5a059;
+}
+
+.v2-faq-arrow {
+  font-size: 0.75rem;
+  color: #525252;
+  transition: transform 0.3s;
+  display: inline-block;
+}
+
+.v2-faq-item--open .v2-faq-arrow {
+  transform: rotate(180deg);
+  color: #c5a059;
+}
+
+.v2-faq-answer {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+  padding: 0 1.25rem;
+}
+
+.v2-faq-answer--open {
+  max-height: 300px;
+  opacity: 1;
+  padding: 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.v2-faq-a-text {
+  color: #a3a3a3;
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+/* ── [9] 최종 CTA ── */
+.v2-cta-section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+
+.v2-cta-box {
+  background: rgba(23,23,23,0.6);
+  border: 2px solid #c5a059;
+  border-radius: 35px;
+  padding: 4rem 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
+
+.v2-cta-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16rem;
+  height: 16rem;
+  background: rgba(197,160,89,0.1);
+  filter: blur(100px);
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.v2-cta-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.v2-cta-desc {
+  color: #a3a3a3;
+  font-size: 0.75rem;
+  max-width: 36rem;
+  margin: 0 auto;
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+/* ── [10] 푸터 ── */
+.v2-footer {
+  background: #0a0a0a;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 4rem 1.5rem;
+  font-size: 0.75rem;
+  color: #737373;
+}
+
+.v2-footer-inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 3rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.v2-footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+}
+
+.v2-footer-text {
+  line-height: 1.7;
+  max-width: 20rem;
+  color: #a3a3a3;
+}
+
+.v2-footer-contact-title {
+  color: #fff;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.v2-footer-contact-text { line-height: 1.7; }
+
+.v2-footer-bottom {
+  max-width: 72rem;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.v2-footer-gold {
+  color: #c5a059;
+  font-weight: 700;
+}
+
+/* ── 모달 ── */
+.v2-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.v2-modal-card {
+  background: #171717;
+  border-radius: 30px;
+  padding: 2.5rem;
+  text-align: center;
+  width: 100%;
+  max-width: 24rem;
+  transition: all 0.3s;
+}
+
+.v2-modal-card--win {
+  border: 1px solid #c5a059;
+  box-shadow: 0 0 50px rgba(197,160,89,0.2);
+}
+
+.v2-modal-card--lose {
+  border: 1px solid #262626;
+}
+
+.v2-modal-emoji { font-size: 3rem; margin-bottom: 1rem; }
+
+.v2-modal-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  margin-bottom: 0.75rem;
+}
+
+.v2-modal-prize {
+  color: #fff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+}
+
+.v2-modal-note {
+  color: #737373;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.v2-modal-close {
+  width: 100%;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #fceabb, #fccd4d, #f8b500);
+  color: #000;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.v2-modal-close:active { transform: scale(0.95); }
+
+/* ── 반응형 (태블릿) ── */
+@media (max-width: 1024px) {
+  .v2-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .v2-grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .v2-pricing-grid { grid-template-columns: repeat(2, 1fr); }
+  .v2-nav { padding: 1rem; }
+  .v2-nav-links { gap: 1rem; }
+  .v2-hero { padding: 88px 1rem 3rem; }
+}
+
+/* ── 반응형 (모바일) ── */
+@media (max-width: 768px) {
+  .v2-grid-4 { grid-template-columns: 1fr; }
+  .v2-grid-3 { grid-template-columns: 1fr; }
+  .v2-pricing-grid { grid-template-columns: 1fr; }
+  .v2-footer-inner { flex-direction: column; }
+  .v2-footer-bottom { flex-direction: column; text-align: center; }
+  .v2-nav-links { gap: 0.6rem; }
+  .v2-nav-link { font-size: 0.75rem; }
+  .v2-section-title { font-size: 1.5rem; }
+  .v2-cta-title { font-size: 1.25rem; }
+  .v2-hero-sub { font-size: 0.8rem; }
+  .v2-workflow-title { font-size: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .v2-nav-links { gap: 0.4rem; }
+  .v2-nav-link { font-size: 0.65rem; }
+}

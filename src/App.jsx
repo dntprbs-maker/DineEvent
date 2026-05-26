@@ -36,6 +36,7 @@ import CompanyIntro from './pages/CompanyIntro'
 import ClassicIntro from './pages/ClassicIntro'
 import NewLanding from './pages/NewLanding'
 import WorkshopIntro from './pages/WorkshopIntro' // [NEW] 작업용 복사 페이지
+import CompanyIntroV2 from './pages/CompanyIntroV2' // [NEW] 리뉴얼 서비스 소개 페이지 (V2)
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -252,12 +253,17 @@ const AdminRootInner = () => {
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <OriginalIntro />
+    element: <CompanyIntroV2 />
   },
   {
     // [NEW] 작업용 복사 페이지 (OriginalIntro 완전 복사본)
     path: "/workshop",
     element: <WorkshopIntro />
+  },
+  {
+    // [NEW] 리뉴얼 서비스 소개 페이지 (V2)
+    path: "/v2",
+    element: <CompanyIntroV2 />
   },
   {
     path: "/new-landing",
