@@ -42,16 +42,24 @@ const MobileAdminInfo = ({
 
   const closeModal = () => setActiveModal(null);
 
-  const renderButton = (item) => (
-    <div 
-      key={item.id} 
-      className="mockup-style-button" 
-      onClick={() => setActiveModal(item.id)}
-    >
-      <span className="mockup-icon">{item.icon}</span>
-      <span className="mockup-label">{item.label}</span>
-    </div>
-  );
+  const renderButton = (item) => {
+    const isDemo = (item.id === 'heroImage' && !homeSettings.heroImage) ||
+                   (item.id === 'menu1' && !menuImages.image1) ||
+                   (item.id === 'menu2' && !menuImages.image2);
+
+    return (
+      <div 
+        key={item.id} 
+        className="mockup-style-button" 
+        onClick={() => setActiveModal(item.id)}
+      >
+        <span className="mockup-icon">{item.icon}</span>
+        <span className="mockup-label" style={{ color: isDemo ? 'skyblue' : '#fff' }}>
+          {item.label} {isDemo && <span style={{ fontSize: '0.65rem', marginLeft: '4px', opacity: 0.8 }}>(데모 적용중)</span>}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div className="mobile-admin-container" style={{ padding: '0 0.8rem 150px 0.8rem', animation: 'fadeIn 0.5s ease-out' }}>

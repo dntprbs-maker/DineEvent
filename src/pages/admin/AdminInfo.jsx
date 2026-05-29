@@ -252,7 +252,9 @@ const AdminInfo = () => {
               <input type="text" value={locationSettings.address} onChange={(e) => setLocationSettings(prev => ({...prev, address: e.target.value}))} style={{ width: '100%', background: '#111', border: '1px solid #333', padding: '0.8rem', color: '#fff', borderRadius: '10px' }} />
             </div>
             <div style={{ marginTop: '0.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>🖼️ 메인 배경 이미지</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: !homeSettings.heroImage ? 'skyblue' : 'var(--text-muted)' }}>
+                🖼️ 메인 배경 이미지 {!homeSettings.heroImage && <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(데모 적용중)</span>}
+              </label>
               <div className="file-input-wrapper">
                 <input type="file" ref={heroInputRef} accept="image/*" onChange={(e) => handleImageUpload(e, 'hero')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
                 {homeSettings.heroImage && (
@@ -263,7 +265,9 @@ const AdminInfo = () => {
               </div>
             </div>
             <div style={{ marginTop: '0.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>🍴 메뉴 이미지 1 (메인)</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: !menuImages.image1 ? 'skyblue' : 'var(--primary)', fontWeight: 'bold' }}>
+                🍴 메뉴 이미지 1 (메인) {!menuImages.image1 && <span style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 'normal' }}>(데모 적용중)</span>}
+              </label>
               <div className="file-input-wrapper" style={{ border: '1px dashed var(--primary)' }}>
                 <input type="file" ref={menu1InputRef} accept="image/*" onChange={(e) => handleImageUpload(e, 'menu1')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
                 {menuImages.image1 && (
@@ -274,7 +278,9 @@ const AdminInfo = () => {
               </div>
             </div>
             <div style={{ marginTop: '0.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>🍴 메뉴 이미지 2 (추가)</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: !menuImages.image2 ? 'skyblue' : 'var(--primary)', fontWeight: 'bold' }}>
+                🍴 메뉴 이미지 2 (추가) {!menuImages.image2 && <span style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 'normal' }}>(데모 적용중)</span>}
+              </label>
               <div className="file-input-wrapper" style={{ border: '1px dashed var(--primary)' }}>
                 <input type="file" ref={menu2InputRef} accept="image/*" onChange={(e) => handleImageUpload(e, 'menu2')} style={{ color: '#555', fontSize: '0.75rem', flex: 1 }} />
                 {menuImages.image2 && (
