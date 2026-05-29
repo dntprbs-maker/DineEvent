@@ -5,14 +5,33 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 
-// Firebase 설정 (환경변수 직접 하드코딩 — 개발용 스크립트)
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const envPath = path.resolve(__dirname, '../.env');
+
+const envVars = {};
+if (fs.existsSync(envPath)) {
+  const envFile = fs.readFileSync(envPath, 'utf8');
+  envFile.split('\n').forEach(line => {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+    if (match) {
+      envVars[match[1]] = match[2] ? match[2].replace(/^['"]?(.*?)['"]?$/, '$1') : '';
+    }
+  });
+}
+
+// Firebase 설정 (.env 파일 또는 process.env 사용)
 const firebaseConfig = {
-  apiKey: "AIzaSyBdVUrgAeSCbzBVCQVk0wnLRcKcywxp5bY",
-  authDomain: "dineevent.firebaseapp.com",
-  projectId: "dineevent",
-  storageBucket: "dineevent.firebasestorage.app",
-  messagingSenderId: "775751591653",
-  appId: "1:775751591653:web:88a846761a8f8bba4e160c",
+  apiKey: process.env.VITE_FIREBASE_API_KEY || envVars.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || envVars.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || envVars.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || envVars.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || envVars.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID || envVars.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
