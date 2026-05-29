@@ -28,7 +28,7 @@ const Location = () => {
   const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(address || '서울특별시 은평구 역촌동 51-42')}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
 
   return (
-    <section className="container" style={{ padding: 'clamp(1.5rem, 6vw, 3rem) 1rem', textAlign: 'center', minHeight: '100vh' }}>
+    <section className="container" style={{ padding: 'clamp(1.5rem, 6vw, 3rem) clamp(1rem, 5vw, 3rem)', textAlign: 'center', minHeight: '100vh' }}>
       
       <div style={{ 
         width: 'min(95%, 600px)', 

@@ -7,10 +7,11 @@ import { db, storage } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useTenant } from '../../context/TenantContext';
+import { QRCodeCanvas } from 'qrcode.react'; // QR 코드 생성 라이브러리
 
 const AdminInfo = () => {
   const navigate = useNavigate();
-  const { getDocRef } = useTenant();
+  const { getDocRef, tenantId } = useTenant(); // tenantId: 가맹점 고유 ID
   const [homeSettings, setHomeSettings] = useState({ brandName: '', topLabel: '', title: '', subtitle: '', heroImage: '' });
   const [menuImages, setMenuImages] = useState({ image1: '', image2: '' });
   const [locationSettings, setLocationSettings] = useState({ address: '' });
@@ -19,6 +20,8 @@ const AdminInfo = () => {
   const [saving, setSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showNoticeModal, setShowNoticeModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false); // QR 코드 모달 표시 여부
+  const qrRef = useRef(null); // QR 코드 캔버스 DOM 접근용
   
   const heroInputRef = useRef(null);
   const menu1InputRef = useRef(null);
@@ -212,13 +215,30 @@ const AdminInfo = () => {
       <div className="glass admin-card-glass">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>
           <h3 style={{ color: 'var(--primary)', margin: 0 }}>🏠 식당 관리</h3>
-          <button 
-            onClick={() => setShowNoticeModal(true)}
-            className="premium-gold-button"
-            style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontSize: '0.9rem' }}
-          >
-            공지사항
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {/* QR 코드 발급 버튼 */}
+            <button
+              onClick={() => setShowQRModal(true)}
+              style={{
+                padding: '0.8rem 1.5rem', borderRadius: '12px', fontSize: '0.9rem',
+                background: 'transparent', border: '1px solid rgba(197, 160, 89, 0.5)',
+                color: 'var(--primary)', cursor: 'pointer', fontWeight: 'bold',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(197,160,89,0.1)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              📱 QR 코드 발급
+            </button>
+            {/* 공지사항 버튼 */}
+            <button 
+              onClick={() => setShowNoticeModal(true)}
+              className="premium-gold-button"
+              style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontSize: '0.9rem' }}
+            >
+              공지사항
+            </button>
+          </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -347,6 +367,124 @@ const AdminInfo = () => {
               to   { opacity: 1; transform: scale(1)    translateY(0); }
             }
           `}} />
+        </div>
+      )}
+
+      {/* ── QR 코드 발급 모달 ── */}
+      {showQRModal && (
+        <div
+          onClick={() => setShowQRModal(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+            zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem', animation: 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#0d0d0d', border: '1px solid rgba(197, 160, 89, 0.4)',
+              borderRadius: '28px', padding: '2.5rem',
+              width: 'min(90%, 400px)', textAlign: 'center',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.9)',
+              animation: 'popupFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          >
+            {/* 닫기 버튼 */}
+            <button
+              onClick={() => setShowQRModal(false)}
+              style={{
+                position: 'absolute', top: '1.2rem', right: '1.2rem',
+                background: 'rgba(255,255,255,0.07)', border: '1px solid #333',
+                color: '#fff', width: '32px', height: '32px', borderRadius: '50%',
+                cursor: 'pointer', fontSize: '1rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              ✕
+            </button>
+
+            <h3 style={{ color: 'var(--primary)', marginBottom: '0.4rem', fontWeight: '900', fontSize: '1.2rem' }}>
+              📱 이벤트 참여 QR 코드
+            </h3>
+            <p style={{ color: '#666', fontSize: '0.8rem', marginBottom: '1.8rem' }}>
+              손님이 스캔하면 룰렛 이벤트 화면으로 바로 이동합니다.
+            </p>
+
+            {/* QR 코드 캔버스 영역 */}
+            <div
+              ref={qrRef}
+              style={{
+                display: 'inline-block', padding: '1.2rem',
+                background: '#fff', borderRadius: '16px',
+                boxShadow: '0 0 30px rgba(197, 160, 89, 0.3)',
+                marginBottom: '1.5rem'
+              }}
+            >
+              <QRCodeCanvas
+                id="qr-canvas"
+                value={`${window.location.origin}/${tenantId}/event`}
+                size={220}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+
+            {/* QR URL 안내 */}
+            <p style={{ color: '#555', fontSize: '0.72rem', marginBottom: '1.5rem', wordBreak: 'break-all' }}>
+              🔗 {window.location.origin}/{tenantId}/event
+            </p>
+
+            {/* 버튼 영역 */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {/* 이미지로 저장 버튼 */}
+              <button
+                onClick={() => {
+                  // 캔버스 DOM을 찾아 PNG로 다운로드
+                  const canvas = document.getElementById('qr-canvas');
+                  if (!canvas) return;
+                  const url = canvas.toDataURL('image/png');
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `QR_${tenantId}_event.png`;
+                  a.click();
+                }}
+                className="premium-gold-button"
+                style={{ flex: 1, padding: '0.9rem', borderRadius: '12px', fontSize: '0.9rem' }}
+              >
+                ⬇️ 저장
+              </button>
+              {/* 인쇄 버튼 */}
+              <button
+                onClick={() => {
+                  const canvas = document.getElementById('qr-canvas');
+                  if (!canvas) return;
+                  const dataUrl = canvas.toDataURL('image/png');
+                  const win = window.open('', '_blank');
+                  win.document.write(`
+                    <html><head><title>QR 코드 인쇄 - ${homeSettings.brandName || tenantId}</title></head>
+                    <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#fff;font-family:sans-serif;">
+                      <h2 style="margin-bottom:1rem;color:#333;">${homeSettings.brandName || tenantId}</h2>
+                      <img src="${dataUrl}" style="width:240px;height:240px;" />
+                      <p style="margin-top:1rem;color:#777;font-size:14px;">이벤트 룰렛 참여 QR 코드</p>
+                      <script>window.onload = function(){ window.print(); }<\/script>
+                    </body></html>
+                  `);
+                  win.document.close();
+                }}
+                style={{
+                  flex: 1, padding: '0.9rem', borderRadius: '12px', fontSize: '0.9rem',
+                  background: 'transparent', border: '1px solid #444',
+                  color: '#aaa', cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                🖨️ 인쇄
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

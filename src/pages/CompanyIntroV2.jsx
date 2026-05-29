@@ -287,7 +287,8 @@ const CompanyIntroV2 = () => {
           ))}
         </div>
 
-        {/* 핵심기능 하단 배너 이미지 — 사용자 제공 이미지 */}
+        {/* 핵심기능 하단 배너 이미지 — 사용자 제공 이미지 (임시 숨김 처리) */}
+        {/*
         <div className="v2-feat-banner-wrap">
           <img
             src="/feat_banner.png"
@@ -295,6 +296,7 @@ const CompanyIntroV2 = () => {
             className="v2-feat-banner-img"
           />
         </div>
+        */}
       </section>
 
       {/* ── [7] 요금제 ── */}
@@ -379,7 +381,13 @@ const CompanyIntroV2 = () => {
           </div>
         </div>
         <div className="v2-footer-bottom">
-          <span>© {new Date().getFullYear()} 주식회사 이벤트룰렛. All rights reserved.</span>
+          <span 
+            onClick={() => navigate('/master-admin')} 
+            style={{ cursor: 'pointer' }}
+            title="슈퍼 관리자 로그인"
+          >
+            © {new Date().getFullYear()} 주식회사 이벤트룰렛. All rights reserved.
+          </span>
           <span className="v2-footer-gold">✦ Premium Gold SaaS V2 Edition</span>
         </div>
       </footer>

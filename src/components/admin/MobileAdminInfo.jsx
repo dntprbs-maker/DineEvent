@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AdminNotice from '../../pages/admin/AdminNotice';
+import { QRCodeCanvas } from 'qrcode.react'; // QR 코드 라이브러리
+import { useTenant } from '../../context/TenantContext'; // 가맹점 ID 가져오기
 
 const MobileAdminInfo = ({ 
   homeSettings, setHomeSettings, 
@@ -9,8 +11,10 @@ const MobileAdminInfo = ({
   handleSave, saving 
 }) => {
   const [activeModal, setActiveModal] = useState(null); 
+  const [showQRModal, setShowQRModal] = useState(false); // QR 모달 표시 여부
   const location = useLocation();
   const navigate = useNavigate();
+  const { tenantId } = useTenant(); // 이 가맹점의 ID
 
   useEffect(() => {
     // 공지사항 관리 페이지에서 뒤로가기로 돌아왔을 때 자동으로 팝업 띄우기
@@ -53,9 +57,14 @@ const MobileAdminInfo = ({
     <div className="mobile-admin-container" style={{ padding: '0 0.8rem 150px 0.8rem', animation: 'fadeIn 0.5s ease-out' }}>
       
       <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+        {/* 왼쪽 열: 기본 정보 버튼들 */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {leftItems.map(renderButton)}
-          {/* [방안 A] 우측 저장 버튼에 가려지지 않도록 좌측 열 하단에 배치 */}
+        </div>
+        {/* 오른쪽 열: 문구 설정 + 공지사항 + QR 코드 */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {rightItems.map(renderButton)}
+          {/* 공지사항 버튼 */}
           <div 
             className="mockup-style-button" 
             onClick={() => setActiveModal('notice')}
@@ -64,11 +73,127 @@ const MobileAdminInfo = ({
             <span className="mockup-icon">🔔</span>
             <span className="mockup-label">공지사항</span>
           </div>
-        </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {rightItems.map(renderButton)}
+          {/* QR 코드 발급 버튼 */}
+          <div
+            className="mockup-style-button"
+            onClick={() => setShowQRModal(true)}
+            style={{ border: '1px solid rgba(197, 160, 89, 0.4)', background: 'transparent' }}
+          >
+            <span className="mockup-icon">📱</span>
+            <span className="mockup-label">QR 코드</span>
+          </div>
         </div>
       </div>
+
+      {/* QR 코드 모달 (모바일 전용) */}
+      {showQRModal && (
+        <div
+          onClick={() => setShowQRModal(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
+            zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#0d0d0d', border: '1px solid rgba(197,160,89,0.4)',
+              borderRadius: '24px', padding: '2rem 1.5rem',
+              width: 'min(90%, 360px)', textAlign: 'center',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+              position: 'relative'
+            }}
+          >
+            {/* 닫기 버튼 */}
+            <button
+              onClick={() => setShowQRModal(false)}
+              style={{
+                position: 'absolute', top: '1rem', right: '1rem',
+                background: 'rgba(255,255,255,0.07)', border: '1px solid #333',
+                color: '#fff', width: '28px', height: '28px', borderRadius: '50%',
+                cursor: 'pointer', fontSize: '0.9rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              ✕
+            </button>
+
+            <h3 style={{ color: 'var(--primary)', fontWeight: '900', fontSize: '1.1rem', marginBottom: '0.3rem' }}>
+              📱 이벤트 참여 QR 코드
+            </h3>
+            <p style={{ color: '#666', fontSize: '0.75rem', marginBottom: '1.4rem' }}>
+              손님이 스캔하면 룰렛 이벤트 화면으로 이동합니다.
+            </p>
+
+            {/* QR 코드 */}
+            <div style={{
+              display: 'inline-block', padding: '1rem',
+              background: '#fff', borderRadius: '14px',
+              boxShadow: '0 0 20px rgba(197,160,89,0.3)',
+              marginBottom: '1.2rem'
+            }}>
+              <QRCodeCanvas
+                id="qr-canvas-mobile"
+                value={`${window.location.origin}/${tenantId}/event`}
+                size={180}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+
+            <p style={{ color: '#555', fontSize: '0.65rem', marginBottom: '1.2rem', wordBreak: 'break-all' }}>
+              🔗 {window.location.origin}/{tenantId}/event
+            </p>
+
+            {/* 저장 / 인쇄 버튼 */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  const canvas = document.getElementById('qr-canvas-mobile');
+                  if (!canvas) return;
+                  const url = canvas.toDataURL('image/png');
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `QR_${tenantId}_event.png`;
+                  a.click();
+                }}
+                className="premium-gold-btn-final"
+                style={{ flex: 1, padding: '0.8rem', fontSize: '0.85rem', borderRadius: '10px', justifyContent: 'center' }}
+              >
+                ⬇️ 저장
+              </button>
+              <button
+                onClick={() => {
+                  const canvas = document.getElementById('qr-canvas-mobile');
+                  if (!canvas) return;
+                  const dataUrl = canvas.toDataURL('image/png');
+                  const win = window.open('', '_blank');
+                  win.document.write(`
+                    <html><head><title>QR 코드 인쇄</title></head>
+                    <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#fff;font-family:sans-serif;">
+                      <img src="${dataUrl}" style="width:220px;height:220px;" />
+                      <p style="margin-top:1rem;color:#777;font-size:14px;">이벤트 룰렛 참여 QR 코드</p>
+                      <script>window.onload=function(){window.print();}<\/script>
+                    </body></html>
+                  `);
+                  win.document.close();
+                }}
+                style={{
+                  flex: 1, padding: '0.8rem', fontSize: '0.85rem', borderRadius: '10px',
+                  background: 'transparent', border: '1px solid #444', color: '#aaa',
+                  cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                🖨️ 인쇄
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 공지사항 전용 중앙 팝업 (PC와 동일한 방식) */}
       {activeModal === 'notice' && (

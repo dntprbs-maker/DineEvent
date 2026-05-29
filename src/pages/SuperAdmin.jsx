@@ -412,8 +412,13 @@ const SuperAdmin = () => {
   return (
     <div style={{
       background: '#0a0a0a', color: '#fff', minHeight: '100vh',
-      fontFamily: "'Outfit', 'Inter', sans-serif", padding: '2rem 1.5rem'
+      fontFamily: "'Outfit', 'Inter', sans-serif"
     }}>
+      <div style={{
+        maxWidth: '1400px',
+        margin: '0 auto',
+        padding: '2rem 1.5rem'
+      }}>
       
       {/* 상단 통합 제어바 */}
       <div style={{
@@ -746,10 +751,9 @@ const SuperAdmin = () => {
             </div>
           )}
         </div>
-
       </div>
-
     </div>
+  </div>
   );
 };
 

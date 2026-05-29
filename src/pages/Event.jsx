@@ -6,7 +6,7 @@ const Event = () => {
 
   return (
     <section className="container" style={{ 
-      padding: 'clamp(1.5rem, 6vw, 3rem) 0.8rem', 
+      padding: 'clamp(1.5rem, 6vw, 3rem) clamp(1rem, 5vw, 3rem)', 
       minHeight: '100vh', 
       textAlign: 'center',
       display: 'flex',

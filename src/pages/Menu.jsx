@@ -29,7 +29,7 @@ const Menu = () => {
   if (loading) return <div className="container" style={{ minHeight: '100vh', background: '#000' }}></div>;
 
   return (
-    <section className="container" style={{ padding: 'clamp(2.5rem, 8vw, 4rem) 1.2rem', minHeight: '100vh', textAlign: 'center' }}>
+    <section className="container" style={{ padding: 'clamp(2.5rem, 8vw, 4rem) clamp(1rem, 5vw, 3rem)', minHeight: '100vh', textAlign: 'center' }}>
       
       <div className="menu-images-list" style={{ 
         maxWidth: '900px', 

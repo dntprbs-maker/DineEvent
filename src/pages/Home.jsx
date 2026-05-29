@@ -77,7 +77,7 @@ const Home = () => {
       padding: '0 1rem'
     }}>
       <div className="hero-overlay"></div>
-      <div className="hero-content container" style={{ width: '100%', maxWidth: '100vw', padding: '0 0.5rem' }}>
+      <div className="hero-content container" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 clamp(1rem, 5vw, 3rem)' }}>
         
         {/* 상단 라벨: 모바일에서 너무 길어지지 않게 조정 */}
         <span className="fade-in" style={{ 
