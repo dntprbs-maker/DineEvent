@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { 
-  collection, getDocs, setDoc, doc, deleteDoc, updateDoc,
+  collection, getDocs, setDoc, doc, deleteDoc, updateDoc, addDoc,
   query, orderBy, serverTimestamp 
 } from 'firebase/firestore';
+import TenantTable from '../components/admin/TenantTable';
 
 const SuperAdmin = () => {
   const navigate = useNavigate();
 
   // 1. 보안용 비밀번호 상태 관리 (마스터 계정 비밀코드)
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // 개발 및 UI 편집을 위해 로그인 임시 패스
   const [passcode, setPasscode] = useState('');
   const [authError, setAuthError] = useState('');
 
@@ -20,6 +21,8 @@ const SuperAdmin = () => {
   const [selectedTenantId, setSelectedTenantId] = useState('');
   const [entries, setEntries] = useState([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
+  // 응모내역 팝업 검색어
+  const [entrySearch, setEntrySearch] = useState('');
 
   // 3. 신규 가맹점 생성 폼 상태 관리
   const [newStore, setNewStore] = useState({
@@ -30,6 +33,8 @@ const SuperAdmin = () => {
   });
   const [provisioning, setProvisioning] = useState(false);
   const [provisionSuccess, setProvisionSuccess] = useState('');
+  const [activeView, setActiveView] = useState('none'); // 'none', 'provision', 'storeList'
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   // 보안 로그인 수행
   const handleLogin = (e) => {
@@ -61,6 +66,26 @@ const SuperAdmin = () => {
       setLoadingTenants(false);
     }
   };
+
+  // 로그인 우회 시 가맹점 목록 자동 불러오기
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTenants();
+    }
+  }, []);
+
+  // 팝업 모달이 열려있는 동안 배경 페이지 스크롤 차단
+  useEffect(() => {
+    if (isLogModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    // 컴포넌트가 언마운트될 때도 반드시 복원
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isLogModalOpen]);
 
   // 디폴트 테넌트 시딩 함수 (레거시 데모 복구용)
   const handleSeedLegacy = async () => {
@@ -206,6 +231,40 @@ const SuperAdmin = () => {
     } catch (err) {
       console.error(err);
       alert('삭제 중 실패했습니다.');
+    }
+  };
+
+  // 500galbi 매장에 더미 응모 데이터 50개 삽입 (개발/테스트용)
+  const handleSeedEntries = async () => {
+    const tenantId = '500galbi';
+    // 응모 가능한 상품 목록 (실제 룰렛 상품에 맞게 조정)
+    const prizes = [
+      '1등 샴페인 교환권', '2등 시그니처 머그', '3등 수제 케이크',
+      '4등 아메리카노 1잔', '5등 프리미엄 초콜릿', '다음 기회에(꽝)'
+    ];
+    // 010-5555-xxxx 형태의 임의 전화번호 생성
+    const randomPhone = () => `010-5555-${String(Math.floor(1000 + Math.random() * 9000))}`;
+    // 최근 30일 내 임의 타임스탬프
+    const randomTs = () => {
+      const now = Date.now();
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      return { seconds: Math.floor((now - Math.random() * thirtyDays) / 1000), nanoseconds: 0 };
+    };
+    try {
+      const colRef = collection(db, 'tenants', tenantId, 'entries');
+      for (let i = 0; i < 50; i++) {
+        const prize = prizes[Math.floor(Math.random() * prizes.length)];
+        await addDoc(colRef, {
+          phone: randomPhone(),
+          prize,
+          prizeName: prize,
+          createdAt: randomTs(),
+        });
+      }
+      alert('500소갈비 매장에 더미 응모 데이터 50개가 추가되었습니다!');
+    } catch (err) {
+      console.error(err);
+      alert('시드 데이터 삽입 실패: ' + err.message);
     }
   };
 
@@ -466,14 +525,37 @@ const SuperAdmin = () => {
         </div>
       </div>
 
-      {/* 2단 그리드 구성: 가맹점 개설 및 매장 목록 vs 당첨 로그 리스트 */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: '30px'
-      }}>
-        
-        {/* 좌측: 신규 매장 추가 및 가맹점 제어 패널 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+      {/* 뷰 토글 버튼 영역 */}
+      <div style={{ display: 'flex', gap: '15px', marginBottom: '2rem', justifyContent: 'center' }}>
+        <button 
+          onClick={() => setActiveView(activeView === 'provision' ? 'none' : 'provision')}
+          style={{ 
+            padding: '1rem 2rem', 
+            background: activeView === 'provision' ? '#C5A059' : '#222', 
+            color: activeView === 'provision' ? '#000' : '#fff', 
+            borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem',
+            transition: 'all 0.3s'
+          }}
+        >
+          🚀 가맹점 원클릭 발급
+        </button>
+        <button 
+          onClick={() => setActiveView(activeView === 'storeList' ? 'none' : 'storeList')}
+          style={{ 
+            padding: '1rem 2rem', 
+            background: activeView === 'storeList' ? '#C5A059' : '#222', 
+            color: activeView === 'storeList' ? '#000' : '#fff', 
+            borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem',
+            transition: 'all 0.3s'
+          }}
+        >
+          📋 입점 매장 리스트 및 현황
+        </button>
+      </div>
+
+      {/* 가맹점 원클릭 발급 뷰 */}
+      {activeView === 'provision' && (
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           
           {/* 가맹점 신규 프로비저닝 */}
           <div style={{
@@ -549,209 +631,226 @@ const SuperAdmin = () => {
               </button>
             </form>
           </div>
-
-          {/* 등록된 가맹점 관리 목록 */}
-          <div style={{
-            background: 'rgba(255,255,255,0.02)', border: '1px solid #222',
-            borderRadius: '20px', padding: '2rem'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ color: '#fff', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>📋</span> 입점 매장 리스트
-              </h3>
-              {tenants.length === 0 && (
-                <button onClick={handleSeedLegacy} style={{ background: '#333', border: 'none', color: '#C5A059', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                  기본 데모 추가 (Seed)
-                </button>
-              )}
-            </div>
-
-            {loadingTenants ? (
-              <div style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>가맹점 데이터 목록 불러오는 중...</div>
-            ) : tenants.length === 0 ? (
-              <div style={{ color: '#666', textAlign: 'center', padding: '2rem', fontSize: '0.9rem' }}>
-                현재 입점 가맹점이 없습니다.<br/>위 가맹점 발급 폼으로 매장을 개설해 주세요.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-                {tenants.map(t => (
-                  <div 
-                    key={t.id} 
-                    style={{
-                      background: selectedTenantId === t.id ? 'rgba(197, 160, 89, 0.05)' : '#000',
-                      border: selectedTenantId === t.id ? '1px solid #C5A059' : '1px solid #222',
-                      borderRadius: '12px', padding: '1rem', cursor: 'pointer', transition: 'all 0.2s',
-                      opacity: t.status === 'suspended' ? 0.6 : 1
-                    }}
-                    onClick={() => setSelectedTenantId(t.id)}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '5px' }}>
-                      <span style={{ fontWeight: 'bold', color: selectedTenantId === t.id ? '#C5A059' : '#fff' }}>
-                        {t.brandName} {t.status === 'suspended' && <span style={{ color: '#ff4d4d', fontSize: '0.75rem', marginLeft: '5px' }}>(🔴 정지됨)</span>}
-                      </span>
-                      {/* 우측 상단 가맹점 ID 표기 및 🗑️ 삭제 버튼 배치 */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#555', background: '#111', padding: '2px 6px', borderRadius: '4px' }}>
-                          {t.id}
-                        </span>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteStore(t); }}
-                          style={{
-                            background: 'rgba(255, 77, 77, 0.1)',
-                            border: '1px solid rgba(255, 77, 77, 0.2)',
-                            color: '#ff4d4d',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            padding: '3px 6px',
-                            borderRadius: '6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s',
-                          }}
-                          title="가맹점 완전 삭제"
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#ff4d4d';
-                            e.currentTarget.style.color = '#fff';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 77, 77, 0.1)';
-                            e.currentTarget.style.color = '#ff4d4d';
-                          }}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.8rem', color: '#888', display: 'block' }}>
-                      {t.address}
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: '#C5A059', display: 'block', marginTop: '5px' }}>
-                      🔑 사장님 비밀코드: {t.adminPasscode || '1234'}
-                    </span>
-                    
-                    {/* 바로가기 버튼 세트 */}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                      <a 
-                        href={`/${t.id}`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{
-                          flex: 1, textDecoration: 'none', background: '#222', color: '#fff', fontSize: '0.75rem',
-                          padding: '4px', borderRadius: '6px', textAlign: 'center', fontWeight: 'bold'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        사용자화면 ➔
-                      </a>
-                      <a 
-                        href={`/${t.id}/admin`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{
-                          flex: 1, textDecoration: 'none', background: 'rgba(197, 160, 89, 0.1)', color: '#C5A059',
-                          border: '1px solid rgba(197, 160, 89, 0.2)', fontSize: '0.75rem', padding: '4px', borderRadius: '6px',
-                          textAlign: 'center', fontWeight: 'bold'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        관리센터 🛠️
-                      </a>
-                    </div>
-
-                    {/* 마스터 제어 버튼 영역 (정지 및 초기화) */}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #222' }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleToggleStoreStatus(t); }}
-                        style={{
-                          flex: 1, padding: '4px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px',
-                          background: t.status === 'suspended' ? '#4caf50' : '#d32f2f',
-                          color: '#fff', border: 'none', cursor: 'pointer'
-                        }}
-                      >
-                        {t.status === 'suspended' ? '운영 재개 🟢' : '서비스 정지 🔴'}
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleResetStoreData(t); }}
-                        style={{
-                          flex: 1, padding: '4px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px',
-                          background: 'transparent', border: '1px solid #d32f2f', color: '#d32f2f', cursor: 'pointer'
-                        }}
-                      >
-                        ⚠️ 데이터 초기화
-                      </button>
-                    </div>
-
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
+      )}
 
-        {/* 우측: 선택한 가맹점의 응모 및 당첨 현황 로그 모니터링 */}
+      {/* 매장 리스트 (단일 컬럼) */}
+      {activeView === 'storeList' && (
         <div style={{
-          background: 'rgba(255,255,255,0.02)', border: '1px solid #222',
-          borderRadius: '20px', padding: '2rem'
+          maxWidth: '900px', margin: '0 auto'
         }}>
-          <h3 style={{ color: '#fff', fontWeight: '900', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>📝</span> 실시간 당첨 및 이벤트 응모 내역 제어
-          </h3>
+          
+          {/* 등록된 가맹점 관리 목록 — 정렬 가능한 테이블 */}
+          <TenantTable
+            tenants={tenants}
+            loadingTenants={loadingTenants}
+            selectedTenantId={selectedTenantId}
+            onRowClick={(t) => { setSelectedTenantId(t.id); setIsLogModalOpen(true); }}
+            onSeedLegacy={handleSeedLegacy}
+            onToggleStatus={(e, t) => { e.stopPropagation(); handleToggleStoreStatus(t); }}
+            onResetData={(e, t) => { e.stopPropagation(); handleResetStoreData(t); }}
+            onDelete={(e, t) => { e.stopPropagation(); handleDeleteStore(t); }}
+          />
+        </div>
+      )}
 
-          <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', color: '#aaa' }}>선택된 매장 필터:</span>
-            <span style={{ color: '#C5A059', fontWeight: 'bold', fontSize: '1rem' }}>
-              {tenants.find(t => t.id === selectedTenantId)?.brandName || selectedTenantId || '없음'}
-            </span>
-          </div>
+      {/* 우측: 선택한 가맹점의 응모 및 당첨 현황 로그 모니터링 (모달 팝업) */}
+      {isLogModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.85)', zIndex: 9999,
+          display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px'
+        }} onClick={() => setIsLogModalOpen(false)}>
+          {/* 모달 컨테이너: overflow:hidden으로 내부에서만 스크롤 */}
+          <div style={{
+            background: '#111', border: '1px solid #333',
+            borderRadius: '20px', width: '100%', maxWidth: '800px',
+            height: '85vh', overflow: 'hidden',
+            position: 'relative', boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
+            display: 'flex', flexDirection: 'column'
+          }} onClick={(e) => e.stopPropagation()}>
 
-          {loadingEntries ? (
-            <div style={{ color: '#666', textAlign: 'center', padding: '3rem' }}>해당 매장 당첨 데이터 실시간 수신 중...</div>
-          ) : entries.length === 0 ? (
-            <div style={{ color: '#555', textAlign: 'center', padding: '4rem', fontSize: '0.9rem' }}>
-              당첨 및 응모 내역이 존재하지 않습니다.<br/>이벤트에 고객이 응모를 진행하면 로그가 자동 적재됩니다.
+            {/* ─── 스크롤 시 고정되는 헤더 영역 ─── */}
+            <div style={{
+              flexShrink: 0,
+              background: '#111',
+              borderBottom: '1px solid #2a2a2a',
+              padding: '1.5rem 2rem 1rem',
+              borderRadius: '20px 20px 0 0',
+            }}>
+              {/* 제목 + 응모로그 카드(좌측) + 닫기 버튼(우측 끝) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', gap: '12px' }}>
+                {/* 왼쪽: 제목 + 응모 로그 수 카드 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '100px', flexShrink: 0 }}>
+                  <h3 style={{ color: '#fff', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>📝</span> 실시간 당첨 및 이벤트 응모 내역 제어
+                  </h3>
+                  {/* 응모 로그 수 카드 — 제목 바로 오른쪽 */}
+                  <div style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid #2a2a2a',
+                    borderRadius: '8px',
+                    padding: '5px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    <span style={{ fontSize: '0.65rem', color: '#666' }}>응모 로그</span>
+                    <span style={{ fontSize: '1rem', fontWeight: '900', color: '#fff', lineHeight: 1 }}>
+                      {loadingEntries ? '...' : `${entries.length}건`}
+                    </span>
+                  </div>
+                </div>
+                {/* 닫기 버튼 — 우측 끝 */}
+                <button
+                  onClick={() => setIsLogModalOpen(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#888', fontSize: '1.8rem', cursor: 'pointer', transition: 'color 0.2s', lineHeight: 1, flexShrink: 0 }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#888'}
+                >
+                  ✕
+                </button>
+              </div>
+              {/* 매장명 + 검색창 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
+                {/* 매장명만 표기 */}
+                <span style={{ color: '#C5A059', fontWeight: 'bold', fontSize: '1rem' }}>
+                  {tenants.find(t => t.id === selectedTenantId)?.brandName || selectedTenantId || '없음'}
+                </span>
+                {/* 검색창 — 고정 크기·고정 위치 */}
+                <div style={{ position: 'relative', width: '320px', flexShrink: 0 }}>
+                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#555', fontSize: '0.85rem', pointerEvents: 'none' }}>🔍</span>
+                  <input
+                    type="text"
+                    placeholder="전화번호 · 닉네임 · 일시 검색..."
+                    value={entrySearch}
+                    onChange={e => setEntrySearch(e.target.value)}
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '7px 28px 7px 30px',
+                      background: '#0a0a0a', border: '1px solid #333',
+                      borderRadius: '8px', color: '#fff', fontSize: '0.82rem',
+                      outline: 'none', transition: 'border-color 0.2s',
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#C5A059'}
+                    onBlur={e => e.target.style.borderColor = '#333'}
+                  />
+                  {entrySearch && (
+                    <button
+                      onClick={() => setEntrySearch('')}
+                      style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1 }}
+                    >✕</button>
+                  )}
+                </div>
+              </div>
             </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #333', color: '#666' }}>
-                    <th style={{ padding: '8px' }}>연락처 (ID)</th>
-                    <th style={{ padding: '8px' }}>획득 상품 / 응모 구분</th>
-                    <th style={{ padding: '8px' }}>일시</th>
-                    <th style={{ padding: '8px', textAlign: 'center' }}>동작</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.map(entry => {
-                    const dateStr = entry.createdAt?.seconds 
-                      ? new Date(entry.createdAt.seconds * 1000).toLocaleString() 
-                      : '대기 중';
-                    return (
-                      <tr key={entry.id} style={{ borderBottom: '1px solid #222', color: '#ddd' }}>
-                        <td style={{ padding: '10px 8px', fontWeight: 'bold' }}>{entry.phone}</td>
-                        <td style={{ padding: '10px 8px', color: '#C5A059' }}>{entry.prizeName || entry.prize}</td>
-                        <td style={{ padding: '10px 8px', fontSize: '0.75rem', color: '#888' }}>{dateStr}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                          <button 
-                            onClick={() => handleDeleteEntry(entry.id)}
+
+            {/* ─── 스크롤 영역: thead sticky로 헤더와 데이터 열이 자동 일치 ─── */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {loadingEntries ? (
+                <div style={{ color: '#666', textAlign: 'center', padding: '3rem' }}>해당 매장 당첨 데이터 실시간 수신 중...</div>
+              ) : entries.length === 0 ? (
+                <div style={{ color: '#555', textAlign: 'center', padding: '4rem', fontSize: '0.9rem' }}>
+                  당첨 및 응모 내역이 존재하지 않습니다.<br/>이벤트에 고객이 응모를 진행하면 로그가 자동 적재됩니다.
+                </div>
+              ) : (() => {
+                // 검색어로 필터링
+                const q = entrySearch.trim().toLowerCase();
+                const filtered = q
+                  ? entries.filter(e =>
+                      (e.phone || '').toLowerCase().includes(q) ||
+                      (e.name || '').toLowerCase().includes(q) ||
+                      (e.date || '').includes(q)
+                    )
+                  : entries;
+
+                return (
+                  <table style={{
+                    width: '100%',
+                    /* separate + spacing:0 → sticky th 배경 비침 방지 */
+                    borderCollapse: 'separate',
+                    borderSpacing: 0,
+                    fontSize: '0.85rem',
+                    textAlign: 'left',
+                    tableLayout: 'fixed',
+                  }}>
+                    {/* colgroup으로 열 너비 지정 — 헤더/데이터 자동 일치 */}
+                    <colgroup>
+                      <col style={{ width: '22%' }} /> {/* 일시 */}
+                      <col style={{ width: '13%' }} /> {/* 닉네임 */}
+                      <col style={{ width: '22%' }} /> {/* 연락처 */}
+                      <col />                          {/* 획득 상품 */}
+                      <col style={{ width: '56px' }} />{/* 동작 */}
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        {['일시', '닉네임', '연락처 (ID)', '획득 상품', '동작'].map((label, i) => (
+                          <th
+                            key={label}
                             style={{
-                              background: 'transparent', border: 'none', color: '#ff4d4d',
-                              cursor: 'pointer', fontSize: '1rem'
+                              padding: '10px 16px',
+                              color: '#666',
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold',
+                              textAlign: i === 4 ? 'center' : 'left',
+                              /* sticky: 스크롤 시 헤더 고정 */
+                              position: 'sticky',
+                              top: 0,
+                              background: '#111',
+                              zIndex: 2,
+                              /* border-collapse:separate일 때 구분선은 box-shadow로 */
+                              boxShadow: '0 1px 0 #2a2a2a',
                             }}
                           >
-                            🗑️
-                          </button>
-                        </td>
+                            {label}
+                          </th>
+                        ))}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {filtered.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: '#555', fontSize: '0.9rem' }}>
+                            검색 결과가 없습니다.
+                          </td>
+                        </tr>
+                      ) : filtered.map(entry => {
+                        const dateStr = entry.createdAt?.seconds
+                          ? new Date(entry.createdAt.seconds * 1000).toLocaleString()
+                          : (entry.date || '대기 중');
+                        return (
+                          <tr key={entry.id} style={{ borderBottom: '1px solid #1e1e1e', color: '#ddd' }}>
+                            {/* 1: 일시 */}
+                            <td style={{ padding: '12px 16px', fontSize: '0.75rem', color: '#888', borderBottom: '1px solid #1e1e1e' }}>{dateStr}</td>
+                            {/* 2: 닉네임 */}
+                            <td style={{ padding: '12px 16px', color: '#aaa', fontSize: '0.8rem', borderBottom: '1px solid #1e1e1e' }}>
+                              {entry.name || <span style={{ color: '#444' }}>-</span>}
+                            </td>
+                            {/* 3: 연락처 */}
+                            <td style={{ padding: '12px 16px', fontWeight: 'bold', borderBottom: '1px solid #1e1e1e' }}>{entry.phone}</td>
+                            {/* 4: 획득 상품 */}
+                            <td style={{ padding: '12px 16px', color: '#C5A059', borderBottom: '1px solid #1e1e1e' }}>{entry.prizeName || entry.prize}</td>
+                            {/* 5: 동작 */}
+                            <td style={{ padding: '12px 16px', textAlign: 'center', borderBottom: '1px solid #1e1e1e' }}>
+                              <button
+                                onClick={() => handleDeleteEntry(entry.id)}
+                                style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer', fontSize: '1rem' }}
+                              >
+                                🗑️
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                );
+              })()}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   </div>
   );
