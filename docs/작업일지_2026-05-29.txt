@@ -42,11 +42,25 @@
    - 매장명(좌) / 검색창(우) space-between 레이아웃 적용
    - 닫기 버튼 우측 끝 고정
 
+[ 추가 수정 내역 ]
+
+1. 배포 오류 수정 (Netlify)
+   - scripts/seed-entries.mjs 내 하드코딩된 Firebase API Key 제거 및 .env 방식 적용
+
+2. 신규 매장 생성 시 공지사항 템플릿 기본값 추가
+   - 슈퍼관리자에서 매장 생성 시, 환영 공지가 가맹점의 '공지 템플릿'에도 자동 저장되도록 수정
+
+3. 관리자 페이지 데모 이미지 UI 개선
+   - 초기 데모 이미지가 적용된 상태(빈칸)일 경우 텍스트를 하늘색으로 강조
+   - '(데모 적용중 - 수정필요)' 안내 라벨을 추가하여 수정 필요성을 직관적으로 안내
+
 ----------------------------------------
 수정 파일
 ----------------------------------------
 - src/pages/SuperAdmin.jsx
-- scripts/seed-entries.mjs  (신규 생성)
-- docs/작업일지_2026-05-29.txt (신규 생성)
+- scripts/seed-entries.mjs
+- src/components/admin/MobileAdminInfo.jsx
+- src/pages/admin/AdminInfo.jsx
+- docs/작업일지_2026-05-29.txt
 
 ========================================
