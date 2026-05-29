@@ -171,12 +171,21 @@ const SuperAdmin = () => {
 
       // 4. 가맹점 초기 웰컴 공지사항 자동 시딩 (공지 팝업 가동 보장)
       const noticeId = `welcome_${Date.now()}`;
+      const defaultNoticeContent = `🎉 저희 [ ${newStore.brandName} ] 에 방문해 주신 고객분들께 진심으로 감사드립니다! \n\n다양하고 혜택이 가득한 매장 한정 이벤트 소식을 이곳에서 전해드릴 예정이오니, 많은 성원과 참여 부탁드립니다. ✨`;
+      
       await setDoc(doc(db, `tenants/${newStore.id}/notices`, noticeId), {
-        content: `🎉 저희 [ ${newStore.brandName} ] 에 방문해 주신 고객분들께 진심으로 감사드립니다! \n\n다양하고 혜택이 가득한 매장 한정 이벤트 소식을 이곳에서 전해드릴 예정이오니, 많은 성원과 참여 부탁드립니다. ✨`,
+        content: defaultNoticeContent,
         isPinned: true,
         startDate: new Date().toISOString().split('T')[0],
         endDate: '2030-12-31',
         createdAt: new Date().toISOString()
+      });
+
+      // 4-1. 초기 웰컴 공지사항을 '공지 템플릿'에도 기본으로 등록
+      const templateId = `template_${Date.now()}`;
+      await setDoc(doc(db, `tenants/${newStore.id}/noticeTemplates`, templateId), {
+        content: defaultNoticeContent,
+        createdAt: serverTimestamp()
       });
 
       // 5. 가맹점 초기 맛있는 대표 메뉴 3개 시딩
