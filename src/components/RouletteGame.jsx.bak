@@ -9,11 +9,10 @@ const RouletteGame = () => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [result, setResult] = useState(null);
   const [submitted, setSubmitted] = useState(false);
-  const [prizes, setPrizes] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // [NEW] 로딩 상태 분리 (true=로딩중 / false=완료)
+  const [prizes, setPrizes] = useState([]); 
   const [showModal, setShowModal] = useState(true);
   const [form, setForm] = useState({ name: '', phone: '', agreed: false });
-  const [slotText, setSlotText] = useState("");
+  const [slotText, setSlotText] = useState(""); 
   const navigate = useNavigate();
   
   const isLockedRef = useRef(false); 
@@ -23,22 +22,16 @@ const RouletteGame = () => {
   }, [tenantId]);
 
   const fetchInitialPrizes = async () => {
-    setIsLoading(true); // 조회 시작 → 로딩 ON
     try {
       // 테넌트 격리형 prizes 조회
       const prizeDocRef = getDocRef('content', 'prizes');
       const prizeDoc = await getDoc(prizeDocRef);
       if (prizeDoc.exists()) {
         const data = prizeDoc.data().list || [];
-        setPrizes(data); // 경품 데이터 저장 (빈 배열도 정상 처리됨)
-      } else {
-        setPrizes([]); // 문서 자체가 없을 때도 빈 배열로 명시
+        setPrizes(data);
       }
     } catch (err) {
       console.error("Initial prize fetch error:", err);
-      setPrizes([]); // 오류 발생 시에도 로딩 해제
-    } finally {
-      setIsLoading(false); // 성공/실패 무관하게 로딩 OFF
     }
   };
 
@@ -146,47 +139,7 @@ const RouletteGame = () => {
     spin(cleanPhone);
   };
 
-  // ── 로딩 중 화면 ──
-  if (isLoading) return (
-    <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-      {/* 골드 스피너 */}
-      <div style={{
-        width: '48px', height: '48px',
-        border: '4px solid rgba(197,160,89,0.2)',
-        borderTop: '4px solid var(--primary)',
-        borderRadius: '50%',
-        animation: 'rouletteSpinner 0.8s linear infinite',
-        margin: '0 auto 1.2rem'
-      }} />
-      <p style={{ color: 'var(--primary)', fontWeight: '700', fontSize: '0.95rem' }}>이벤트 정보를 불러오는 중...</p>
-      <style>{`@keyframes rouletteSpinner { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-
-  // ── 경품 없음 화면 (로딩 완료 후 데이터가 비어있을 때) ──
-  if (prizes.length === 0) return (
-    <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-      <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🎡</div>
-      <h3 style={{ color: 'var(--primary)', fontWeight: '900', fontSize: '1.3rem', marginBottom: '0.8rem' }}>
-        경품을 준비 중입니다
-      </h3>
-      <p style={{ color: '#888', fontSize: '0.85rem', lineHeight: '1.7', wordBreak: 'keep-all', maxWidth: '280px', margin: '0 auto 2rem' }}>
-        아직 이벤트 경품이 등록되지 않았습니다.<br/>
-        사장님이 경품을 등록하면 이곳에서 바로 추첨에 참여할 수 있어요!
-      </p>
-      <button
-        onClick={() => window.history.back()}
-        style={{
-          padding: '0.8rem 2rem', borderRadius: '50px',
-          background: 'rgba(197,160,89,0.15)', border: '1px solid var(--primary)',
-          color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem',
-          cursor: 'pointer'
-        }}
-      >
-        ← 이전으로 돌아가기
-      </button>
-    </div>
-  );
+  if (prizes.length === 0) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--primary)' }}>데이터 로딩 중...</div>;
 
   return (
     <div className="roulette-section" style={{ 

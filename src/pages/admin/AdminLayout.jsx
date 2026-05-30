@@ -26,7 +26,9 @@ const AdminLayout = () => {
         right: 0,
         width: '100%',
         zIndex: 1000, 
-        background: 'linear-gradient(to bottom, #000, transparent)',
+        background: 'rgba(5, 5, 5, 0.98)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
         padding: isMobile ? '1rem 0' : '2rem 0'
       }}>
         <div className={isMobile ? "" : "container"}>

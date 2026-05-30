@@ -161,13 +161,7 @@ const MobileAdminInfo = ({
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 onClick={() => {
-                  const canvas = document.getElementById('qr-canvas-mobile');
-                  if (!canvas) return;
-                  const url = canvas.toDataURL('image/png');
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `QR_${tenantId}_event.png`;
-                  a.click();
+                  downloadPrintableQR('qr-canvas-mobile', homeSettings.brandName || tenantId, `QR_${tenantId}_event.png`);
                 }}
                 className="premium-gold-btn-final"
                 style={{ flex: 1, padding: '0.8rem', fontSize: '0.85rem', borderRadius: '10px', justifyContent: 'center' }}
@@ -183,8 +177,17 @@ const MobileAdminInfo = ({
                   win.document.write(`
                     <html><head><title>QR 코드 인쇄</title></head>
                     <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#fff;font-family:sans-serif;">
-                      <img src="${dataUrl}" style="width:220px;height:220px;" />
-                      <p style="margin-top:1rem;color:#777;font-size:14px;">이벤트 룰렛 참여 QR 코드</p>
+                      <h1 style="margin-bottom:1rem;color:#000;font-size:2.5rem;font-weight:900;text-align:center;">${homeSettings.brandName || tenantId}</h1>
+                      <img src="${dataUrl}" style="width:300px;height:300px;margin-bottom:1rem;" />
+                      <h2 style="margin-top:0;color:#000;font-size:1.8rem;font-weight:900;text-align:center;">🎉 이벤트 룰렛 참여 QR 코드</h2>
+                      <div style="margin-top:2rem;background:#f8f9fa;padding:1.5rem 2rem;border-radius:15px;border:1px solid #dee2e6;text-align:left;width:90%;max-width:550px;">
+                        <h3 style="margin-top:0;margin-bottom:1.2rem;color:#333;font-size:1.3rem;text-align:center;">📋 이벤트 참여 가이드</h3>
+                        <ul style="margin:0;padding-left:1.5rem;color:#444;font-size:1.05rem;line-height:1.7;font-weight:600;">
+                          <li style="margin-bottom:0.8rem;">1인 1회 참여 가능하며, 현장 상황에 따라 제한될 수 있습니다.</li>
+                          <li style="margin-bottom:0.8rem;">당첨 경품은 매장 카운터에서 당첨 화면 확인 후 즉시 지급됩니다.</li>
+                          <li>입력하신 정보는 이벤트 당첨 안내 및 마케팅 용도로 활용됩니다.</li>
+                        </ul>
+                      </div>
                       <script>window.onload=function(){window.print();}<\/script>
                     </body></html>
                   `);
@@ -393,3 +396,82 @@ const MobileAdminInfo = ({
 };
 
 export default MobileAdminInfo;
+
+// 인쇄물과 동일한 형태의 이미지를 생성하여 다운로드하는 헬퍼 함수
+const downloadPrintableQR = (qrCanvasId, brandName, fileName) => {
+  const qrCanvas = document.getElementById(qrCanvasId);
+  if (!qrCanvas) return;
+
+  const width = 800;
+  const height = 1000;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  // 흰색 배경
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+
+  // 상단 매장명
+  ctx.fillStyle = '#000000';
+  ctx.font = '900 48px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(brandName, width / 2, 80);
+
+  // QR 코드 이미지 (가운데 정렬)
+  ctx.drawImage(qrCanvas, (width - 340) / 2, 180, 340, 340);
+
+  // QR 타이틀
+  ctx.fillStyle = '#000000';
+  ctx.font = '900 36px sans-serif';
+  ctx.fillText('🎉 이벤트 룰렛 참여 QR 코드', width / 2, 570);
+
+  // 가이드 박스 배경
+  const boxWidth = 660;
+  const boxHeight = 250;
+  const boxX = (width - boxWidth) / 2;
+  const boxY = 660;
+
+  ctx.fillStyle = '#f8f9fa';
+  if (ctx.roundRect) {
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 20);
+    ctx.fill();
+    ctx.strokeStyle = '#dee2e6';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else {
+    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+    ctx.strokeStyle = '#dee2e6';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+  }
+
+  // 가이드 타이틀
+  ctx.fillStyle = '#333333';
+  ctx.font = 'bold 26px sans-serif';
+  ctx.fillText('📋 이벤트 참여 가이드', width / 2, boxY + 45);
+
+  // 가이드 내용
+  ctx.fillStyle = '#444444';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.textAlign = 'left';
+  const textX = boxX + 40;
+  let textY = boxY + 115;
+  const lineHeight = 40;
+
+  ctx.fillText('• 1인 1회 참여 가능하며, 현장 상황에 따라 제한될 수 있습니다.', textX, textY);
+  textY += lineHeight;
+  ctx.fillText('• 당첨 경품은 매장 카운터에서 당첨 화면 확인 후 즉시 지급됩니다.', textX, textY);
+  textY += lineHeight;
+  ctx.fillText('• 입력하신 정보는 이벤트 당첨 안내 및 마케팅 용도로 활용됩니다.', textX, textY);
+
+  // 다운로드
+  const url = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+};

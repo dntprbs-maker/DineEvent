@@ -36,15 +36,7 @@ import CompanyIntro from './pages/CompanyIntro'
 import ClassicIntro from './pages/ClassicIntro'
 import NewLanding from './pages/NewLanding'
 import WorkshopIntro from './pages/WorkshopIntro' // [NEW] 작업용 복사 페이지
-import CompanyIntroV2 from './pages/CompanyIntroV2' // [LEGACY] 백업용 보존 (직접 라우팅 제거됨)
-
-// [NEW] 섹션 전환 방식 — 회사 소개 페이지 분리 컴포넌트
-import IntroLayout    from './pages/intro/IntroLayout'
-import HeroSection    from './pages/intro/HeroSection'
-import CasesSection   from './pages/intro/CasesSection'
-import FunctionsSection from './pages/intro/FunctionsSection'
-import PricingSection from './pages/intro/PricingSection'
-import FaqSection     from './pages/intro/FaqSection'
+import CompanyIntroV2 from './pages/CompanyIntroV2' // [NEW] 리뉴얼 서비스 소개 페이지 (V2)
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -260,17 +252,8 @@ const AdminRootInner = () => {
 
 const router = createBrowserRouter([
   {
-    // [MOD] 루트(/) — IntroLayout 기반 섹션 전환 방식으로 변경
-    // 각 메뉴 클릭 시 개별 페이지로 전환 (스크롤 방식 → 페이지 전환 방식)
     path: "/",
-    element: <IntroLayout />,
-    children: [
-      { index: true,           element: <HeroSection /> },      // 서비스 소개
-      { path: "intro/cases",   element: <CasesSection /> },    // 활용사례
-      { path: "intro/functions", element: <FunctionsSection /> }, // 핵심기능
-      { path: "intro/pricing", element: <PricingSection /> },  // 요금제
-      { path: "intro/faq",     element: <FaqSection /> },      // FAQ
-    ]
+    element: <CompanyIntroV2 />
   },
   {
     // [NEW] 작업용 복사 페이지 (OriginalIntro 완전 복사본)

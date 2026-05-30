@@ -15,18 +15,9 @@ const Event = () => {
     }}>
       {!showGame ? (
         <div style={{ animation: 'fadeIn 0.8s ease-out', width: '100%', maxWidth: '500px' }}>
-          <div style={{ marginBottom: 'clamp(2rem, 8vw, 4rem)' }}>
-            {/* 사용자의 요청에 따라 모든 효과 폐기, 심플한 네모 버튼으로 변경 */}
-            <button 
-              onClick={() => setShowGame(true)} 
-              className="btn-simple-gold" 
-            >
-              행운의 추첨 시작하기
-            </button>
-          </div>
-          
+          {/* 참여 가이드 — 위로 이동 */}
           <div className="glass" style={{ 
-            margin: '0 auto', 
+            margin: '0 auto clamp(2rem, 8vw, 4rem)', 
             padding: 'clamp(1.2rem, 4vw, 2rem)', 
             textAlign: 'left', 
             borderRadius: '15px',
@@ -57,6 +48,16 @@ const Event = () => {
               <li style={{ marginBottom: '0.5rem' }}>당첨 경품은 매장 카운터에서 당첨 화면 확인 후 즉시 지급됩니다.</li>
               <li>입력하신 정보는 이벤트 당첨 안내 및 마케팅 용도로 활용됩니다.</li>
             </ul>
+          </div>
+
+          {/* 추첨 시작하기 버튼 — 아래로 이동 */}
+          <div>
+            <button 
+              onClick={() => setShowGame(true)} 
+              className="btn-simple-gold" 
+            >
+              행운의 추첨 시작하기
+            </button>
           </div>
           
           <div style={{ height: '6rem' }}></div>

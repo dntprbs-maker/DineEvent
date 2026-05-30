@@ -157,17 +157,17 @@ const AdminDashboardV4 = () => {
     summaryRow: {
       display: 'grid',
       gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '24px',
+      gap: '12px',
       flexShrink: 0
     },
     summaryCard: {
       background: '#111',
-      borderRadius: '30px',
-      padding: '24px 32px',
+      borderRadius: '16px',
+      padding: '12px 18px',
       display: 'flex',
       alignItems: 'center',
-      gap: '20px',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+      gap: '12px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
       border: '1px solid rgba(255,255,255,0.03)'
     },
     label: {
@@ -179,15 +179,15 @@ const AdminDashboardV4 = () => {
       letterSpacing: '0.05em'
     },
     iconBox: (gradient) => ({
-      width: '60px',
-      height: '60px',
-      borderRadius: '20px',
+      width: '36px',
+      height: '36px',
+      borderRadius: '10px',
       background: gradient,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '28px',
-      boxShadow: '0 8px 20px rgba(0,0,0,0.3)'
+      fontSize: '16px',
+      boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
     }),
     mainLayout: {
       display: 'flex',
@@ -264,8 +264,8 @@ const AdminDashboardV4 = () => {
           <div style={styles.iconBox('linear-gradient(135deg, #fbbf24, #d97706)')}>👥</div>
           <div>
             <p style={styles.label}>총 응모자</p>
-            <h2 style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#fff' }}>
-              {stats.total.toLocaleString()} <span style={{ fontSize: '14px', color: '#ff8e53', fontWeight: '400' }}>명</span>
+            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#fff' }}>
+              {stats.total.toLocaleString()} <span style={{ fontSize: '11px', color: '#ff8e53', fontWeight: '400' }}>명</span>
             </h2>
           </div>
         </div>
@@ -273,8 +273,8 @@ const AdminDashboardV4 = () => {
           <div style={styles.iconBox('linear-gradient(135deg, #34d399, #059669)')}>🔥</div>
           <div>
             <p style={styles.label}>오늘의 응모</p>
-            <h2 style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#fff' }}>
-              {stats.todayEntries > 0 ? `+${stats.todayEntries}` : stats.todayEntries} <span style={{ fontSize: '14px', color: '#ff8e53', fontWeight: '400' }}>명</span>
+            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#fff' }}>
+              {stats.todayEntries > 0 ? `+${stats.todayEntries}` : stats.todayEntries} <span style={{ fontSize: '11px', color: '#ff8e53', fontWeight: '400' }}>명</span>
             </h2>
           </div>
         </div>
@@ -282,8 +282,8 @@ const AdminDashboardV4 = () => {
           <div style={styles.iconBox('linear-gradient(135deg, #a78bfa, #4f46e5)')}>🏆</div>
           <div>
             <p style={styles.label}>당첨 처리 현황</p>
-            <h2 style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#fff' }}>
-              {stats.winners} <span style={{ fontSize: '14px', color: '#ff8e53', fontWeight: '400' }}>명</span>
+            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#fff' }}>
+              {stats.winners} <span style={{ fontSize: '11px', color: '#ff8e53', fontWeight: '400' }}>명</span>
             </h2>
           </div>
         </div>
