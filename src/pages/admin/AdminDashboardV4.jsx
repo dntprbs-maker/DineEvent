@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { db } from '../../firebase';
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
+import { useTenant } from '../../context/TenantContext';
 
 const AdminDashboardV4 = () => {
+  // ✅ 수정: TenantContext 연결 — 테넌트별 Firestore 경로 헬퍼 사용
+  const { tenantId, getColRef } = useTenant();
+
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,41 +21,53 @@ const AdminDashboardV4 = () => {
     return Array.from(new Map(entries.map(item => [item.phone, item])).values());
   }, [entries]);
 
-  // 데이터 불러오기
+  // 데이터 불러오기 — tenantId가 바뀔 때마다 재조회
   useEffect(() => {
     fetchEntries();
-  }, []);
+  }, [tenantId]);
 
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'entries'), orderBy('timestamp', 'desc'));
-      const querySnapshot = await getDocs(q);
+      // ✅ 수정: collection(db, 'entries') → getColRef('entries')
+      // 기존: 최상위 'entries' 컬렉션 조회 (테넌트 구분 없음)
+      // 수정: tenants/{tenantId}/entries 경로로 테넌트 격리 조회
+      const querySnapshot = await getDocs(getColRef('entries'));
       
       const now = Date.now();
-      const ONE_YEAR = 365 * 24 * 60 * 60 * 1000; // 1년 (주인님 요청사항 반영)
+      const ONE_YEAR = 365 * 24 * 60 * 60 * 1000; // 1년 보관
       const validData = [];
 
       for (const document of querySnapshot.docs) {
         const item = { id: document.id, ...document.data() };
         
+        // timestamp 타입별 처리 (Firestore Timestamp, JS Date, 문자열, 직렬화 객체 모두 지원)
         let entryTime = 0;
         if (item.timestamp && typeof item.timestamp.toMillis === 'function') {
           entryTime = item.timestamp.toMillis();
-        } else if (item.timestamp) {
+        } else if (item.timestamp instanceof Date) {
+          entryTime = item.timestamp.getTime();
+        } else if (item.timestamp && typeof item.timestamp === 'string') {
           entryTime = new Date(item.timestamp).getTime();
+        } else if (item.timestamp && item.timestamp.seconds) {
+          entryTime = item.timestamp.seconds * 1000;
         }
 
         if (entryTime > 0 && (now - entryTime) > ONE_YEAR) {
           try {
-            await deleteDoc(doc(db, 'entries', item.id));
+            // ✅ 수정: doc(db, 'entries', ...) → getColRef 기반 참조
+            await deleteDoc(doc(getColRef('entries'), item.id));
           } catch (delErr) {
             console.error("자동 삭제 실패:", delErr);
           }
         } else {
-          validData.push(item);
+          validData.push({ ...item, _entryTime: entryTime });
         }
       }
+
+      // JS에서 직접 최신순 정렬 (timestamp 없는 항목은 맨 위)
+      validData.sort((a, b) => (b._entryTime || 0) - (a._entryTime || 0));
+
       setEntries(validData);
     } catch (err) {
       console.error(err);
@@ -132,7 +147,8 @@ const AdminDashboardV4 = () => {
     if (window.confirm('모든 응모 내역을 삭제하시겠습니까?')) {
       try {
         for (const entry of entries) {
-          await deleteDoc(doc(db, 'entries', entry.id));
+          // ✅ 수정: doc(db, 'entries', ...) → 테넌트 격리 경로
+          await deleteDoc(doc(getColRef('entries'), entry.id));
         }
         setEntries([]);
         alert('삭제 완료');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../../firebase';
-import { collection, query, orderBy, getDocs, deleteDoc, doc, addDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, addDoc, getDoc } from 'firebase/firestore';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
 import { useTenant } from '../../context/TenantContext';
@@ -32,8 +32,11 @@ const AdminMessages = () => {
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      const q = query(getColRef('entries'), orderBy('timestamp', 'desc'));
-      const querySnapshot = await getDocs(q);
+      // ✅ 수정: orderBy('timestamp')를 제거하고 전체 조회 후 JS에서 정렬
+      // 이유: Firestore의 orderBy()는 해당 필드가 null이거나 없는 문서를 결과에서 제외함.
+      // serverTimestamp()로 저장된 직후 클라이언트 캐시에서 읽으면 timestamp가 null일 수 있어
+      // 실제 응모된 데이터가 관리자 화면에 표시되지 않는 버그가 있었음.
+      const querySnapshot = await getDocs(getColRef('entries'));
       
       const now = Date.now();
       const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
@@ -43,12 +46,23 @@ const AdminMessages = () => {
       for (const document of querySnapshot.docs) {
         const item = { id: document.id, ...document.data() };
         
+        // timestamp 필드에서 시간(ms)을 추출합니다.
+        // Firestore Timestamp 객체, JS Date 객체, 문자열 등 다양한 형태를 모두 처리합니다.
         let entryTime = 0;
         if (item.timestamp && typeof item.timestamp.toMillis === 'function') {
+          // Firestore 서버 타임스탬프 (가장 일반적인 형태)
           entryTime = item.timestamp.toMillis();
-        } else if (item.timestamp) {
+        } else if (item.timestamp instanceof Date) {
+          // JS Date 객체
+          entryTime = item.timestamp.getTime();
+        } else if (item.timestamp && typeof item.timestamp === 'string') {
+          // 문자열 날짜
           entryTime = new Date(item.timestamp).getTime();
+        } else if (item.timestamp && item.timestamp.seconds) {
+          // Firestore Timestamp 직렬화 객체 ({seconds, nanoseconds})
+          entryTime = item.timestamp.seconds * 1000;
         }
+        // timestamp가 null/없는 경우: entryTime = 0 → 24시간 체크 통과하여 목록에 표시됨
 
         if (entryTime > 0 && (now - entryTime) > TWENTY_FOUR_HOURS) {
           // 24시간이 지났으면 클라우드에서 영구 삭제
@@ -58,10 +72,13 @@ const AdminMessages = () => {
             console.error("자동 삭제 실패:", delErr);
           }
         } else {
-          // 24시간 이내의 데이터만 화면에 표시
-          validData.push(item);
+          // 24시간 이내의 데이터(및 timestamp 없는 데이터)는 목록에 포함
+          validData.push({ ...item, _entryTime: entryTime });
         }
       }
+
+      // JS에서 직접 최신순 정렬 (timestamp 없는 항목은 맨 위로)
+      validData.sort((a, b) => (b._entryTime || 0) - (a._entryTime || 0));
 
       setEntries(validData);
     } catch (err) {

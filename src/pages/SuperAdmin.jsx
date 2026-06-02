@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { 
   collection, getDocs, setDoc, doc, deleteDoc, updateDoc, addDoc,
-  query, orderBy, serverTimestamp 
+  serverTimestamp 
 } from 'firebase/firestore';
 import TenantTable from '../components/admin/TenantTable';
 
@@ -52,9 +52,25 @@ const SuperAdmin = () => {
   const fetchTenants = async () => {
     setLoadingTenants(true);
     try {
-      const q = query(collection(db, 'tenants'), orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
-      const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // ✅ B안: orderBy 제거 → 전체 조회 후 JS에서 정렬
+      // 이유: orderBy('createdAt')는 createdAt 필드가 없는 레거시 문서를 제외하고,
+      //       import에서 orderBy를 제거한 이후 fetchEntries 수정과 충돌이 발생했음.
+      //       JS 정렬로 통일하여 어떤 문서도 누락되지 않도록 처리.
+      const snap = await getDocs(collection(db, 'tenants'));
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // createdAt 기준 최신순 정렬 (필드 없는 레거시 문서는 맨 아래)
+      const getMs = (item) => {
+        const t = item.createdAt ?? null;
+        if (!t) return 0;
+        if (typeof t.toMillis === 'function') return t.toMillis();
+        if (t instanceof Date)               return t.getTime();
+        if (typeof t === 'string')           return new Date(t).getTime();
+        if (t.seconds)                       return t.seconds * 1000;
+        return 0;
+      };
+      list.sort((a, b) => getMs(b) - getMs(a));
+
       setTenants(list);
 
       if (list.length > 0 && !selectedTenantId) {
@@ -112,9 +128,28 @@ const SuperAdmin = () => {
     const fetchEntries = async () => {
       setLoadingEntries(true);
       try {
-        const q = query(collection(db, 'tenants', selectedTenantId, 'entries'), orderBy('createdAt', 'desc'));
-        const snap = await getDocs(q);
-        setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        // ✅ 수정: orderBy('createdAt') 제거 → 전체 조회 후 JS에서 정렬
+        // 이유: 실제 응모 데이터는 'timestamp' 필드를 사용하고,
+        //       과거 시드 데이터는 'createdAt'을 사용하는 등 필드명이 혼재되어 있음.
+        //       orderBy()는 해당 필드가 없는 문서를 결과에서 제외하므로
+        //       실제 응모 데이터가 슈퍼관리자에 표시되지 않는 버그가 있었음.
+        const snap = await getDocs(collection(db, 'tenants', selectedTenantId, 'entries'));
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // timestamp / createdAt / date 등 다양한 필드를 폴백 처리하여 시간(ms) 추출
+        const getMs = (item) => {
+          const t = item.timestamp ?? item.createdAt ?? null;
+          if (!t) return 0;
+          if (typeof t.toMillis === 'function') return t.toMillis();       // Firestore Timestamp
+          if (t instanceof Date)               return t.getTime();          // JS Date
+          if (typeof t === 'string')           return new Date(t).getTime(); // 문자열
+          if (t.seconds)                       return t.seconds * 1000;     // 직렬화 객체
+          return 0;
+        };
+
+        // 최신순 정렬 (시간 정보 없는 항목은 맨 위)
+        docs.sort((a, b) => (getMs(b) || Infinity) - (getMs(a) || Infinity));
+        setEntries(docs);
       } catch (err) {
         console.error(err);
       } finally {
