@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, deleteDoc, doc, addDoc, getDoc } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { getDocs, deleteDoc, doc, addDoc, getDoc } from 'firebase/firestore';
+
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
 import { useTenant } from '../../context/TenantContext';
@@ -11,10 +11,7 @@ const AdminMessages = () => {
   const [loading, setLoading] = useState(true);
   const [smsTemplate, setSmsTemplate] = useState('[실제 매장이름] 고객님, 새로운 이벤트가 시작되었습니다! 지금 바로 매장에 방문하여 참여해보세요!');
 
-  useEffect(() => {
-    fetchEntries();
-    fetchBrandName();
-  }, [tenantId]);
+  // ✅ 수정: fetchBrandName/fetchEntries를 useEffect보다 먼저 선언 (호이스팅 오류 방지)
 
   // 식당관리 정보에서 설정한 실제 매장명 불러오기
   const fetchBrandName = async () => {
@@ -88,6 +85,13 @@ const AdminMessages = () => {
     }
   };
 
+  useEffect(() => {
+    fetchEntries();
+    fetchBrandName();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
+
+
   const clearAll = async () => {
     if (window.confirm('클라우드의 모든 응모 내역을 삭제하시겠습니까?')) {
       try {
@@ -96,11 +100,13 @@ const AdminMessages = () => {
         }
         setEntries([]);
         alert('삭제 완료');
-      } catch (err) {
+      } catch {
+        // 삭제 실패 시 사용자 알림만 제공 (에러 상세는 개발 단계에서 확인)
         alert('삭제 실패');
       }
     }
   };
+
 
   const generateMockEntries = async () => {
     setLoading(true);

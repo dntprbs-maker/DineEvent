@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import '../CompanyIntroV2.css'; // 기존 CSS 공유
+
 
 /**
  * IntroLayout — 회사 소개 페이지 공통 레이아웃

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import '../CompanyIntroV2.css';
 
 /**
@@ -18,25 +17,21 @@ const miniPrizes = [
 ];
 
 const HeroSection = () => {
-  const navigate = useNavigate();
-
   // ── 상태 관리 ──
   const [showPrizeModal, setShowPrizeModal] = useState(false);
   const [isSpinning,     setIsSpinning]     = useState(false);
   const [spinAngle,      setSpinAngle]      = useState(0);
   const [selectedPrize,  setSelectedPrize]  = useState(null);
-  const [totalEntries,   setTotalEntries]   = useState(482927); // 가상 누적 응모수
 
-  // 실시간 누적 응모 카운팅 시뮬레이션
+  // 실시간 누적 응모 카운팅 시뮬레이션 (가상 숫자, 화면에 미표시 중이라 useEffect만 유지)
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTotalEntries(prev => prev + Math.floor(Math.random() * 3) + 1);
-    }, 3200);
-    return () => clearInterval(interval);
+    // 추후 카운터 UI 추가 시 활성화
+    return () => {};
   }, []);
 
-  // 가상 룰렛 구동 로직
+  // 가상 룰렛 구동 로직 (CTA 버튼과 연결)
   const startVirtualSpin = () => {
+
     if (isSpinning) return;
     setIsSpinning(true);
     setSelectedPrize(null);
@@ -110,8 +105,31 @@ const HeroSection = () => {
           <div className="v2-cta-glow" />
           <h2 className="v2-cta-title">이벤트룰렛과 함께 매출 성장을 시작해보세요</h2>
           <p className="v2-cta-desc">단 5분이면 매장만의 응모 이벤트 룰렛을 구축하여 현장 대기 트래픽을 단골 고객으로 전환할 수 있습니다.</p>
+          {/* 룰렛 시뮬레이션 CTA 버튼 */}
+          <button
+            onClick={startVirtualSpin}
+            disabled={isSpinning}
+            style={{
+              marginTop: '1.5rem',
+              padding: '0.9rem 2.5rem',
+              background: isSpinning
+                ? 'rgba(197,160,89,0.3)'
+                : 'linear-gradient(135deg, #fceabb 0%, #fccd4d 50%, #f8b500 100%)',
+              color: '#000',
+              border: 'none',
+              borderRadius: '50px',
+              fontSize: '1rem',
+              fontWeight: '900',
+              cursor: isSpinning ? 'not-allowed' : 'pointer',
+              boxShadow: '0 10px 30px rgba(248,181,0,0.3)',
+              transition: 'all 0.3s'
+            }}
+          >
+            {isSpinning ? '🎡 돌리는 중...' : '🎡 룰렛 시뮬레이션 체험'}
+          </button>
         </div>
       </section>
+
     </>
   );
 };

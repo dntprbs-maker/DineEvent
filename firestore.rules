@@ -1,0 +1,72 @@
+rules_version = '2';
+
+/**
+ * ============================================================
+ *  DineEvent - Firestore 보안 규칙
+ *  작성일: 2026-06
+ *
+ *  ⚠️  현재 개발 단계용 규칙입니다.
+ *      실 서비스 배포 전에 반드시 아래 TODO 항목을 완료하세요.
+ *
+ *  TODO:
+ *    1) Firebase Authentication 도입 후 request.auth.uid 기반 인증으로 전환
+ *    2) 관리자 uid를 Firestore 'admins' 컬렉션에서 관리
+ *    3) 개인정보(phone 등) 필드는 관리자만 읽기 가능하도록 제한
+ * ============================================================
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 전역 헬퍼 함수 ──────────────────────────────────────────
+    // 현재: 인증 없음 (개발 단계) → 추후 Firebase Auth 적용 시 변경
+    function isAuthenticated() {
+      // TODO: Firebase Auth 도입 후 아래로 교체
+      // return request.auth != null;
+      return true; // 개발 단계: 임시 허용
+    }
+
+    // ── 테넌트별 컬렉션 규칙 ────────────────────────────────────
+    // 경로: tenants/{tenantId}/{collection}/{docId}
+    match /tenants/{tenantId}/{collection}/{docId} {
+
+      // 공지사항(notices): 읽기는 모두 허용, 쓰기는 관리자만
+      // 고객이 QR → 이벤트 페이지에서 공지 목록을 조회해야 하므로 read는 공개
+      allow read: if collection == 'notices';
+
+      // 응모 데이터(entries): 손님이 응모 시 write, 관리자만 read/delete
+      // TODO: 실 서비스에서는 관리자 auth로 제한해야 함 (현재 개발 중)
+      allow read:   if collection == 'entries'  && isAuthenticated();
+      allow create: if collection == 'entries';  // 손님 응모 허용
+      allow delete: if collection == 'entries'  && isAuthenticated();
+
+      // 이벤트 설정(eventConfig): 관리자만 read/write
+      allow read, write: if collection == 'eventConfig' && isAuthenticated();
+
+      // 매장 기본정보(settings): 관리자만 write, read는 공개 (QR 페이지에서 필요)
+      allow read: if collection == 'settings';
+      allow write: if collection == 'settings' && isAuthenticated();
+
+      // 공지 템플릿(noticeTemplates): 관리자만 read/write
+      allow read, write: if collection == 'noticeTemplates' && isAuthenticated();
+
+      // 테넌트 루트 문서: 관리자만
+      allow read, write: if isAuthenticated();
+    }
+
+    // ── 전역 컬렉션 (테넌트 비공유) ─────────────────────────────
+    // SMS 템플릿 (전역): 관리자만 read/write
+    match /smsTemplates/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 슈퍼 관리자 전용 컬렉션 (테넌트 목록 등)
+    // TODO: 슈퍼 관리자 uid 기반으로 제한 필요
+    match /tenants/{tenantId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 그 외 모든 컬렉션: 기본 차단
+    // (위 규칙에 매칭되지 않는 경로는 자동 거부)
+  }
+}

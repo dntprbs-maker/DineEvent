@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // [NEW] 이동 기능 임포트
-import { db } from '../../firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { useTenant } from '../../context/TenantContext';
 
-const AdminNotice = ({ onClose, compact = false }) => {
+// onClose prop: 팝업 모드에서 사용 (현재는 navigate로 공지관리 페이지 이동 사용)
+const AdminNotice = ({ compact = false }) => {
   const navigate = useNavigate(); // [NEW] 이동 함수 선언
   const { getColRef, tenantId } = useTenant();
   const [notices, setNotices] = useState([]);
@@ -42,17 +42,13 @@ const AdminNotice = ({ onClose, compact = false }) => {
     isPinned: false
   });
 
-  useEffect(() => {
-    fetchNotices();
-    fetchTemplates(); // 템플릿도 함께 불러오기
-  }, [tenantId]);
-
+  // ✅ 수정: fetchNotices/fetchTemplates를 useEffect보다 먼저 선언 (호이스팅 오류 방지)
   const fetchNotices = async () => {
     try {
       // [FIX] 복합 인덱스 불필요 - createdAt 단일 정렬 후 JS에서 isPinned 처리
       const q = query(getColRef('notices'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
-      const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const list = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
       
       // 고정(isPinned) 항목을 먼저, 그 다음 최신순 정렬
       const sorted = list.sort((a, b) => {
@@ -62,14 +58,33 @@ const AdminNotice = ({ onClose, compact = false }) => {
       
       setNotices(sorted);
     } catch (err) {
-      console.error("Notice fetch error:", err);
+      console.error('공지사항 불러오기 오류:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Firestore noticeTemplates 콜렉션에서 템플릿 목록 읽기
+  const fetchTemplates = async () => {
+    setTemplateLoading(true);
+    try {
+      const q = query(getColRef('noticeTemplates'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      setTemplates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error('템플릿 불러오기 오류:', err);
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotices();
+    fetchTemplates(); // 템플릿도 함께 불러오기
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
+
   const handleSave = async () => {
-    console.log("Saving notice...", form);
     if (!form.content.trim()) {
       alert('공지 내용을 입력해주세요.');
       return;
@@ -118,23 +133,7 @@ const AdminNotice = ({ onClose, compact = false }) => {
     }
   };
 
-  // ── 템플릿 관련 함수 ──
 
-  // Firestore noticeTemplates 콜렉션에서 템플릿 목록 읽기
-  const fetchTemplates = async () => {
-    setTemplateLoading(true);
-    try {
-      const q = query(getColRef('noticeTemplates'), orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
-      setTemplates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    } catch (err) {
-      console.error('Template fetch error:', err);
-    } finally {
-      setTemplateLoading(false);
-    }
-  };
-
-  // 현재 입력된 내용을 템플릿으로 저장
   const saveTemplate = async () => {
     if (!form.content.trim()) {
       alert('저장할 공지 내용을 먼저 입력해주세요.');

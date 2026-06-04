@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './CompanyIntroV2.css'; // 전용 CSS (Tailwind 비의존)
 
@@ -207,7 +207,8 @@ const CompanyIntroV2 = () => {
       {/* ── [2] 히어로 ── */}
       <section id="hero" className="v2-hero">
         <div className="v2-hero-inner">
-          <div className="v2-badge">오프라인 매장 전용 스마트 마케팅 엔진</div>
+          <div className="v2-badge">오프라인 매장 전용 스마트 마케팅 엔진 · 누적 응모 {totalEntries.toLocaleString()}건+</div>
+
           <h1 className="v2-hero-title">
             방문 고객의 발걸음을<br/>
             <span className="v2-hero-gradient">머물게 하는 완벽한 룰렛</span>
@@ -359,6 +360,29 @@ const CompanyIntroV2 = () => {
           <div className="v2-cta-glow" />
           <h2 className="v2-cta-title">이벤트룰렛과 함께 매출 성장을 시작해보세요</h2>
           <p className="v2-cta-desc">단 5분이면 매장만의 응모 이벤트 룰렛을 구축하여 현장 대기 트래픽을 단골 고객으로 전환할 수 있습니다.</p>
+          {/* 룰렛 시뮬레이션 체험 버튼 - startVirtualSpin 연결 */}
+          <button
+            onClick={startVirtualSpin}
+            disabled={isSpinning}
+            className="v2-cta-spin-btn"
+            style={{
+              marginTop: '1.5rem',
+              padding: '0.9rem 2.5rem',
+              background: isSpinning
+                ? 'rgba(197,160,89,0.3)'
+                : 'linear-gradient(135deg, #fceabb 0%, #fccd4d 50%, #f8b500 100%)',
+              color: '#000',
+              border: 'none',
+              borderRadius: '50px',
+              fontSize: '1rem',
+              fontWeight: '900',
+              cursor: isSpinning ? 'not-allowed' : 'pointer',
+              boxShadow: '0 10px 30px rgba(248,181,0,0.3)',
+              transition: 'all 0.3s'
+            }}
+          >
+            {isSpinning ? '🎡 돌리는 중...' : '🎡 룰렛 시뮬레이션 체험'}
+          </button>
         </div>
       </section>
 

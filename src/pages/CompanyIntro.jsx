@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const CompanyIntro = () => {
@@ -51,7 +51,7 @@ const CompanyIntro = () => {
       const hours = String(new Date().getHours()).padStart(2, '0');
       const minutes = String(new Date().getMinutes()).padStart(2, '0');
       const seconds = String(new Date().getSeconds()).padStart(2, '0');
-      const curTime = `${hours}:${seconds}`;
+      const curTime = `${hours}:${minutes}:${seconds}`;
 
       const phonePrefixes = ['010-****-1234', '010-****-7890', '010-****-4567', '010-****-9876', '010-****-8822'];
       const randomPhone = phonePrefixes[Math.floor(Math.random() * phonePrefixes.length)];
@@ -432,8 +432,9 @@ const CompanyIntro = () => {
         <div className="lg:col-span-7 text-left flex flex-col items-start">
           
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#c5a059]/15 to-[#c5a059]/5 border border-[#c5a059]/40 rounded-full px-4.5 py-1.5 text-xs font-extrabold text-[#c5a059] tracking-wider mb-6 animate-pulse shadow-[0_0_15px_rgba(197,160,89,0.1)]">
-            ✨ 오프라인 매장 전용 이벤트 솔루션
+            ✨ 오프라인 매장 전용 이벤트 솔루션 · 누적 응모 {totalEntries.toLocaleString()}건+
           </div>
+
 
           <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6 text-white">
             매장 문 앞 대기열을 만드는<br/>

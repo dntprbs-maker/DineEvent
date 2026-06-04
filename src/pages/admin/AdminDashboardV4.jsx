@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminMessages from '../../components/admin/MobileAdminMessages';
@@ -21,11 +21,7 @@ const AdminDashboardV4 = () => {
     return Array.from(new Map(entries.map(item => [item.phone, item])).values());
   }, [entries]);
 
-  // 데이터 불러오기 — tenantId가 바뀔 때마다 재조회
-  useEffect(() => {
-    fetchEntries();
-  }, [tenantId]);
-
+  // ✅ 수정: fetchEntries를 useEffect보다 먼저 선언 (호이스팅 오류 방지)
   const fetchEntries = async () => {
     setLoading(true);
     try {
@@ -75,6 +71,12 @@ const AdminDashboardV4 = () => {
       setLoading(false);
     }
   };
+
+  // 데이터 불러오기 — tenantId가 바뀔 때마다 재조회
+  useEffect(() => {
+    fetchEntries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
 
   // 기간 프리셋 설정 함수
   const setPresetRange = (days) => {
@@ -152,11 +154,13 @@ const AdminDashboardV4 = () => {
         }
         setEntries([]);
         alert('삭제 완료');
-      } catch (err) {
+      } catch {
+        // 삭제 실패 시 사용자 알림
         alert('삭제 실패');
       }
     }
   };
+
 
   const styles = {
     container: {

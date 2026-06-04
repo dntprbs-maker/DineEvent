@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useTenant } from '../../context/TenantContext';
 
@@ -14,7 +14,6 @@ const AdminLayout = () => {
 
   const isMobile = useIsMobile(768);
   const navigate = useNavigate();
-  const location = useLocation();
 
   return (
     <div style={{ minHeight: '100vh', background: '#050505' }}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import RouletteGame from '../components/RouletteGame';
 
 const Event = () => {

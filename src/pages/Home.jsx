@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import heroImg from '../assets/hero.png';
-import { db } from '../firebase';
 import { query, orderBy, onSnapshot } from 'firebase/firestore';
 import { useTenant } from '../context/TenantContext';
 
@@ -204,7 +203,7 @@ const Home = () => {
             </h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {activeNotices.map((notice, idx) => (
+              {activeNotices.map((notice) => (
                 <div key={notice.id} style={{ 
                   background: 'rgba(255,255,255,0.03)', padding: '1.2rem', 
                   borderRadius: '12px', borderLeft: notice.isPinned ? '3px solid var(--primary)' : '3px solid transparent'

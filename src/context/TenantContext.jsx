@@ -11,7 +11,8 @@ export const TenantProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [tenantMeta, setTenantMeta] = useState({
     status: 'active',
-    adminPasscode: '1234'
+    // 기본 패스코드는 환경변수에서 참조 (하드코딩 금지)
+    adminPasscode: import.meta.env.VITE_DEFAULT_ADMIN_PASSCODE || ''
   });
   const [tenantConfig, setTenantConfig] = useState({
     brandName: 'DineEvent',
@@ -36,7 +37,8 @@ export const TenantProvider = ({ children }) => {
         } else {
           setTenantMeta({
             status: 'active',
-            adminPasscode: '1234'
+            // Firestore에 해당 테넌트 없실 시 환경변수 폴백
+            adminPasscode: import.meta.env.VITE_DEFAULT_ADMIN_PASSCODE || ''
           });
         }
 

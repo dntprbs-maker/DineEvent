@@ -1,12 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import b2bKiosk from '../assets/b2b_roulette_kiosk.png';
 
 const ClassicIntro = () => {
-  const navigate = useNavigate();
-
-  // ── 상태 관리 ──
-  const [activeFaq, setActiveFaq] = useState(null);
   const [showConsultModal, setShowConsultModal] = useState(false); // 무료 상담 신청 모달
   const [selectedCase, setSelectedCase] = useState(null); // 성공 사례 클릭 시 상세 팝업 모달
   const [consultSubmitted, setConsultSubmitted] = useState(false);

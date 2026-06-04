@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { 
-  collection, getDocs, setDoc, doc, deleteDoc, updateDoc, addDoc,
+  collection, getDocs, setDoc, doc, deleteDoc, updateDoc,
   serverTimestamp 
 } from 'firebase/firestore';
+
 import TenantTable from '../components/admin/TenantTable';
 
 const SuperAdmin = () => {
@@ -37,9 +38,11 @@ const SuperAdmin = () => {
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   // 보안 로그인 수행
+  // 슈퍼관리자 로그인: 환경변수에서 패스코드 참조 (소스 코드에 하드코딩 금지)
   const handleLogin = (e) => {
     e.preventDefault();
-    if (passcode === '9999') {
+    const correctPasscode = import.meta.env.VITE_SUPER_ADMIN_PASSCODE;
+    if (passcode === correctPasscode) {
       setIsAuthenticated(true);
       setAuthError('');
       fetchTenants();
@@ -278,39 +281,7 @@ const SuperAdmin = () => {
     }
   };
 
-  // 500galbi 매장에 더미 응모 데이터 50개 삽입 (개발/테스트용)
-  const handleSeedEntries = async () => {
-    const tenantId = '500galbi';
-    // 응모 가능한 상품 목록 (실제 룰렛 상품에 맞게 조정)
-    const prizes = [
-      '1등 샴페인 교환권', '2등 시그니처 머그', '3등 수제 케이크',
-      '4등 아메리카노 1잔', '5등 프리미엄 초콜릿', '다음 기회에(꽝)'
-    ];
-    // 010-5555-xxxx 형태의 임의 전화번호 생성
-    const randomPhone = () => `010-5555-${String(Math.floor(1000 + Math.random() * 9000))}`;
-    // 최근 30일 내 임의 타임스탬프
-    const randomTs = () => {
-      const now = Date.now();
-      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-      return { seconds: Math.floor((now - Math.random() * thirtyDays) / 1000), nanoseconds: 0 };
-    };
-    try {
-      const colRef = collection(db, 'tenants', tenantId, 'entries');
-      for (let i = 0; i < 50; i++) {
-        const prize = prizes[Math.floor(Math.random() * prizes.length)];
-        await addDoc(colRef, {
-          phone: randomPhone(),
-          prize,
-          prizeName: prize,
-          createdAt: randomTs(),
-        });
-      }
-      alert('500소갈비 매장에 더미 응모 데이터 50개가 추가되었습니다!');
-    } catch (err) {
-      console.error(err);
-      alert('시드 데이터 삽입 실패: ' + err.message);
-    }
-  };
+  // 💡 handleSeedEntries: 개발용 더미 데이터 삽입 함수 (실서비스에서 UI에 노출하지 않음)
 
   // [NEW] 매장 정지 및 운영 재개 토글 함수
   const handleToggleStoreStatus = async (targetTenant) => {

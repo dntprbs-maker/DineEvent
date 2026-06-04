@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const AdminDashboardV3 = () => {
   // 테스트용 목업 데이터 (기존 데이터와 동일한 형식)

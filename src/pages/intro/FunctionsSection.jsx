@@ -1,5 +1,5 @@
-import React from 'react';
 import '../CompanyIntroV2.css';
+
 
 /**
  * FunctionsSection — 핵심 기술 & 기능 소개

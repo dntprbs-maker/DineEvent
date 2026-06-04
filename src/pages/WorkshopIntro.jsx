@@ -6,7 +6,7 @@
 // 라우트: /workshop
 // ============================================================
 
-import React from 'react';
+
 import { useNavigate } from 'react-router-dom';
 
 const WorkshopIntro = () => {

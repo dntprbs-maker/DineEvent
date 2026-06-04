@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const AdminDashboard = () => {
   // 테스트용 목업 데이터

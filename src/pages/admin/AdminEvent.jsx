@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useBlocker } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useBlocker } from 'react-router-dom';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminEvent from '../../components/admin/MobileAdminEvent';
-import { db } from '../../firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useTenant } from '../../context/TenantContext';
+import { getDoc, setDoc } from 'firebase/firestore';
 
 const AdminEvent = () => {
   const { getDocRef } = useTenant();
@@ -70,8 +69,8 @@ const AdminEvent = () => {
 
   const isDirty = originalPrizes !== JSON.stringify(prizes);
 
-  // [NEW] 페이지 이동 차단 (React Router Blocker)
-  const blocker = useBlocker(({ nextLocation }) => isDirty && !saving);
+  // [NEW] 페이지 이동 차단 (React Router Blocker) — 변경사항이 있으면 페이지이동 전 확인 요청
+  const blocker = useBlocker(() => isDirty && !saving);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {

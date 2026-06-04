@@ -1,37 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { getDocs, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { useTenant } from '../../context/TenantContext';
 
+/**
+ * AdminNoticeManager — 공지사항 목록 관리 컴포넌트
+ * - 공지 수정 / 삭제 기능
+ * - 삭제 시 모달 확인 팝업
+ */
 const AdminNoticeManager = () => {
   const { getColRef, tenantId } = useTenant();
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
-  const [deleteTargetId, setDeleteTargetId] = useState(null); // [NEW] 삭제 확인 대상 ID 추가
+  const [deleteTargetId, setDeleteTargetId] = useState(null); // 삭제 확인 대상 ID
   const [editForm, setEditForm] = useState({ content: '', startDate: '', endDate: '', isPinned: false });
 
-  useEffect(() => {
-    fetchNotices();
-  }, [tenantId]);
-
+  // ✅ 수정: fetchNotices를 useEffect보다 먼저 선언하여 "접근 전 선언" 오류 방지
   const fetchNotices = async () => {
     try {
       const q = query(getColRef('notices'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
-      const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const list = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
       setNotices(list);
     } catch (err) {
-      console.error(err);
+      console.error('공지사항 불러오기 오류:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchNotices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
+
+  // 삭제 버튼 클릭 → 모달 오픈
   const handleDeleteClick = (id) => {
-    setDeleteTargetId(id); // 팝업 띄우기
+    setDeleteTargetId(id);
   };
 
+  // 삭제 확인 → Firestore 삭제 후 목록 새로고침
   const confirmDelete = async () => {
     if (!deleteTargetId) return;
     try {
@@ -40,11 +48,12 @@ const AdminNoticeManager = () => {
       await fetchNotices();
       alert('삭제되었습니다.');
     } catch (err) {
-      console.error("Delete error:", err);
+      console.error('삭제 오류:', err);
       alert('삭제 중 오류가 발생했습니다: ' + err.message);
     }
   };
 
+  // 수정 모드 진입
   const startEdit = (notice) => {
     setEditingId(notice.id);
     setEditForm({
@@ -55,6 +64,7 @@ const AdminNoticeManager = () => {
     });
   };
 
+  // 수정 내용 저장
   const handleUpdate = async () => {
     try {
       await updateDoc(doc(getColRef('notices'), editingId), editForm);
@@ -62,6 +72,7 @@ const AdminNoticeManager = () => {
       fetchNotices();
       alert('수정되었습니다.');
     } catch (err) {
+      console.error('수정 오류:', err);
       alert('수정 중 오류가 발생했습니다.');
     }
   };
@@ -113,14 +124,14 @@ const AdminNoticeManager = () => {
                   </div>
 
                   <label style={{ display: 'block', marginBottom: '0.5rem', color: '#c5a059' }}>공지 내용</label>
-                  <textarea 
+                  <textarea
                     value={editForm.content}
                     onChange={(e) => setEditForm({...editForm, content: e.target.value})}
                     style={{ ...inputStyle, height: '100px', resize: 'none' }}
                   />
 
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={handleUpdate} style={{ flex: 1, padding: '0.8rem', background: '#c5a059', color: '#00', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>저장</button>
+                    <button onClick={handleUpdate} style={{ flex: 1, padding: '0.8rem', background: '#c5a059', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>저장</button>
                     <button onClick={() => setEditingId(null)} style={{ flex: 1, padding: '0.8rem', background: '#333', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>취소</button>
                   </div>
                 </div>
@@ -142,7 +153,7 @@ const AdminNoticeManager = () => {
         </div>
       )}
 
-      {/* ── [NEW] 삭제 확인 모달 ── */}
+      {/* ── 삭제 확인 모달 ── */}
       {deleteTargetId && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',

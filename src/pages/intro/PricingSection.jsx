@@ -1,5 +1,5 @@
-import React from 'react';
 import '../CompanyIntroV2.css';
+
 
 /**
  * PricingSection — 요금제 안내

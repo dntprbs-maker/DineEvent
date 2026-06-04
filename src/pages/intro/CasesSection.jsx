@@ -1,5 +1,5 @@
-import React from 'react';
 import '../CompanyIntroV2.css';
+
 
 /**
  * CasesSection — 업종별 활용 사례

@@ -1,16 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, useBlocker } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useBlocker } from 'react-router-dom';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import MobileAdminInfo from '../../components/admin/MobileAdminInfo';
 import AdminNotice from './AdminNotice';
-import { db, storage } from '../../firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getDoc, setDoc } from 'firebase/firestore';
 import { useTenant } from '../../context/TenantContext';
 import { QRCodeCanvas } from 'qrcode.react'; // QR 코드 생성 라이브러리
 
 const AdminInfo = () => {
-  const navigate = useNavigate();
   const { getDocRef, tenantId } = useTenant(); // tenantId: 가맹점 고유 ID
   const [homeSettings, setHomeSettings] = useState({ brandName: '', topLabel: '', title: '', subtitle: '', heroImage: '' });
   const [menuImages, setMenuImages] = useState({ image1: '', image2: '' });
@@ -54,8 +51,8 @@ const AdminInfo = () => {
 
   const isDirty = originalData !== JSON.stringify({ hData: homeSettings, lData: locationSettings, mData: menuImages });
 
-  // [NEW] 페이지 이탈 차단 로직 (React Router 6.7+)
-  const blocker = useBlocker(({ nextLocation }) => isDirty && !saving);
+  // [NEW] 페이지 이탈 차단 로직 (React Router 6.7+) — 변경사항 존재 시 이동 전 확인 요청
+  const blocker = useBlocker(() => isDirty && !saving);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -477,7 +474,7 @@ const AdminInfo = () => {
                           <li>입력하신 정보는 이벤트 당첨 안내 및 마케팅 용도로 활용됩니다.</li>
                         </ul>
                       </div>
-                      <script>window.onload = function(){ window.print(); }<\/script>
+                      <script>window.onload = function(){ window.print(); }</script>
                     </body></html>
                   `);
                   win.document.close();
