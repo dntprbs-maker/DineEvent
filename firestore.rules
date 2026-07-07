@@ -2,16 +2,18 @@ rules_version = '2';
 
 /**
  * ============================================================
- *  DineEvent - Firestore 보안 규칙
- *  작성일: 2026-06
+ *  DineEvent - Firestore 보안 규칙 (Firebase Auth 기반)
+ *  작성일: 2026-07-08
  *
- *  ⚠️  현재 개발 단계용 규칙입니다.
- *      실 서비스 배포 전에 반드시 아래 TODO 항목을 완료하세요.
+ *  인증 체계:
+ *    - 관리자 권한은 admins/{uid} 문서로 판별
+ *      { role: 'super' }                          → 마스터 관리자
+ *      { role: 'tenant', tenantId: '가맹점ID' }   → 해당 가맹점 관리자
+ *    - 손님(비로그인)은 공개 읽기 + 응모 생성 + 룰렛 재고 차감만 가능
  *
- *  TODO:
- *    1) Firebase Authentication 도입 후 request.auth.uid 기반 인증으로 전환
- *    2) 관리자 uid를 Firestore 'admins' 컬렉션에서 관리
- *    3) 개인정보(phone 등) 필드는 관리자만 읽기 가능하도록 제한
+ *  TODO (실 서비스 전):
+ *    1) 룰렛 재고 차감(content/prizes 공개 쓰기)을 Cloud Function으로 이전
+ *    2) entries 공개 create에 필드 검증(키 목록/타입) 추가
  * ============================================================
  */
 
@@ -19,67 +21,93 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ── 전역 헬퍼 함수 ──────────────────────────────────────────
-    // 현재: 인증 없음 (개발 단계) → 추후 Firebase Auth 적용 시 변경
-    function isAuthenticated() {
-      // TODO: Firebase Auth 도입 후 아래로 교체
-      // return request.auth != null;
-      return true; // 개발 단계: 임시 허용
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function adminData() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data;
+    }
+    function isSuperAdmin() {
+      return isAdmin() && adminData().role == 'super';
+    }
+    function isTenantAdmin(tenantId) {
+      return isAdmin()
+        && (adminData().role == 'super'
+            || (adminData().role == 'tenant' && adminData().tenantId == tenantId));
     }
 
-    // ── 테넌트별 컬렉션 규칙 ────────────────────────────────────
-    // 경로: tenants/{tenantId}/{collection}/{docId}
-    match /tenants/{tenantId}/{collection}/{docId} {
-
-      // 공지사항(notices): 읽기는 모두 허용, 쓰기는 관리자만
-      // 고객이 QR → 이벤트 페이지에서 공지 목록을 조회해야 하므로 read는 공개
-      allow read: if collection == 'notices';
-
-      // 응모 데이터(entries): 손님이 응모 시 write, 관리자만 read/delete
-      // TODO: 실 서비스에서는 관리자 auth로 제한해야 함 (현재 개발 중)
-      allow read:   if collection == 'entries'  && isAuthenticated();
-      allow create: if collection == 'entries';  // 손님 응모 허용
-      allow delete: if collection == 'entries'  && isAuthenticated();
-
-      // 이벤트 설정(eventConfig): 관리자만 read/write
-      allow read, write: if collection == 'eventConfig' && isAuthenticated();
-
-      // 매장 기본정보(settings): 관리자만 write, read는 공개 (QR 페이지에서 필요)
-      allow read: if collection == 'settings';
-      allow write: if collection == 'settings' && isAuthenticated();
-
-      // 공지 템플릿(noticeTemplates): 관리자만 read/write
-      allow read, write: if collection == 'noticeTemplates' && isAuthenticated();
-
-      // 테넌트 루트 문서: 관리자만
-      allow read, write: if isAuthenticated();
+    // ── 관리자 권한 매핑 ────────────────────────────────────────
+    // 본인 문서 읽기 허용(로그인 직후 역할 확인용), 발급/회수는 슈퍼관리자만
+    match /admins/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isSuperAdmin());
+      allow write: if isSuperAdmin();
     }
 
-    // ── 전역 컬렉션 (테넌트 비공유) ─────────────────────────────
-    // SMS 템플릿 (전역): 관리자만 read/write
-    match /smsTemplates/{docId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    // 슈퍼 관리자 전용 컬렉션 (테넌트 목록 등)
-    // TODO: 슈퍼 관리자 uid 기반으로 제한 필요
+    // ── 테넌트 루트 문서 (status, brandName 등) ─────────────────
+    // 고객 페이지가 매장 상태를 확인해야 하므로 read 공개
     match /tenants/{tenantId} {
-      allow read, write: if isAuthenticated();
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // ── 테넌트별 하위 컬렉션 ────────────────────────────────────
+    // 매장 기본정보: read 공개 (QR 홈/위치 페이지), write 관리자
+    match /tenants/{tenantId}/settings/{docId} {
+      allow read: if true;
+      allow write: if isTenantAdmin(tenantId);
+    }
+
+    // 공지사항: read 공개 (이벤트 페이지 공지 목록), write 관리자
+    match /tenants/{tenantId}/notices/{docId} {
+      allow read: if true;
+      allow write: if isTenantAdmin(tenantId);
+    }
+
+    // 메뉴: read 공개, write 관리자
+    match /tenants/{tenantId}/menus/{docId} {
+      allow read: if true;
+      allow write: if isTenantAdmin(tenantId);
+    }
+
+    // 콘텐츠(경품 목록/메뉴 이미지): read 공개
+    // ⚠️ 손님 룰렛이 클라이언트에서 직접 재고를 차감하므로 write도 공개
+    //    (TODO 1 — Cloud Function 이전 전까지 임시 허용)
+    match /tenants/{tenantId}/content/{docId} {
+      allow read, write: if true;
+    }
+
+    // 응모 로그(개인정보 포함): 생성은 손님 누구나, 조회/삭제는 관리자만
+    match /tenants/{tenantId}/entries/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isTenantAdmin(tenantId);
+    }
+
+    // 공지 템플릿: 관리자 전용
+    match /tenants/{tenantId}/noticeTemplates/{docId} {
+      allow read, write: if isTenantAdmin(tenantId);
+    }
+
+    // ── 전역 컬렉션 ─────────────────────────────────────────────
+    // SMS 템플릿: 관리자(아무 매장이나) 전용
+    match /smsTemplates/{docId} {
+      allow read, write: if isAdmin();
     }
 
     // ── 레거시 루트 경로 (단일 매장 시절 폴백) ──────────────────
     // fetchDocWithFallback이 테넌트 경로에 문서가 없으면 루트를 조회함
-    // 매장 기본정보 폴백 (settings/home, settings/location): read만 공개
     match /settings/{docId} {
       allow read: if true;
+      allow write: if isAdmin();
     }
-
-    // 메뉴 이미지 (content/menu_image): read 공개, write는 관리자 페이지에서 사용
     match /content/{docId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
-    // 그 외 모든 컬렉션: 기본 차단
-    // (위 규칙에 매칭되지 않는 경로는 자동 거부)
+    // 그 외 모든 경로: 기본 차단
   }
 }

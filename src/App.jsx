@@ -15,6 +15,8 @@ import Location from './pages/Location'
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { TenantProvider, useTenant } from './context/TenantContext';
+import { AuthProvider } from './context/AuthContext';
+import AdminGate from './components/admin/AdminGate';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout'
@@ -221,7 +223,9 @@ const RootLayoutInner = () => {
 // [NEW] Admin Root to bypass Navbar/Footer (with TenantProvider)
 const AdminRoot = () => (
   <TenantProvider>
-    <AdminRootInner />
+    <AuthProvider>
+      <AdminRootInner />
+    </AuthProvider>
   </TenantProvider>
 );
 
@@ -249,12 +253,14 @@ const AdminRootInner = () => {
   }
 
   return (
-    <SwipeNavigation>
-      <div className="admin-app">
-        <GlobalStyle />
-        <AdminLayout />
-      </div>
-    </SwipeNavigation>
+    <AdminGate>
+      <SwipeNavigation>
+        <div className="admin-app">
+          <GlobalStyle />
+          <AdminLayout />
+        </div>
+      </SwipeNavigation>
+    </AdminGate>
   );
 };
 
@@ -300,7 +306,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/master-admin",
-    element: <SuperAdmin />
+    element: <AuthProvider><SuperAdmin /></AuthProvider>
   },
   {
     path: "/:tenantId",

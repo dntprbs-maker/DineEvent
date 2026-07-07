@@ -39,14 +39,24 @@
 - **프로젝트 이름은 당분간 바꾸지 마세요.** 저장소명 `DineEvent`로 통일하려다 보류한 상태입니다.
   Firebase 등 연동이 꼬일 수 있어, 이름 정리는 나중에 별도로 진행합니다.
 
+## 인증 체계 (2026-07-08 Firebase Auth 도입)
+
+- 관리자 권한은 Firestore `admins/{uid}` 문서로 판별
+  (`{ role: 'super' }` 또는 `{ role: 'tenant', tenantId: '가맹점ID' }`)
+- 사장님 로그인: 가맹점 ID 기반 가상 이메일 `{tenantId}@admin.dineevent.app` + 비밀코드(6자리 이상)
+  → UI는 `src/components/admin/AdminGate.jsx`, 로직은 `src/context/AuthContext.jsx`
+- 슈퍼관리자 로그인: `VITE_SUPER_ADMIN_EMAIL` 계정 (`/master-admin`)
+- 가맹점 신규 발급 시 SuperAdmin이 관리자 계정 + admins 문서를 자동 생성
+- 보안 규칙은 `firestore.rules` — 배포: `npx firebase-tools deploy --only firestore:rules`
+
 ## 알려진 할 일 (배포 전까지)
 
 > 지금은 개발 단계라 임시로 둔 것들입니다. 실제 손님 데이터가 들어가기 전에 정리합니다.
 
-- [ ] 관리자 임시 비밀번호를 코드에서 빼기
-      (`SuperAdmin.jsx`의 `9999`, `TenantContext.jsx`의 `1234`)
-      → 환경변수로 옮기거나 Firebase Authentication으로 교체
-- [ ] Firestore 보안 규칙 설정 (응모자 개인정보 보호 — 진짜 자물쇠는 여기)
+- [x] 관리자 임시 비밀번호를 코드에서 빼기 → Firebase Authentication 도입 완료 (2026-07-08)
+- [x] Firestore 보안 규칙 설정 → Auth 기반 규칙 배포 완료 (2026-07-08)
+- [ ] 룰렛 재고 차감(`tenants/{t}/content/prizes` 공개 쓰기)을 Cloud Function으로 이전
+- [ ] `entries` 공개 create에 필드 검증 추가 (firestore.rules TODO 참고)
 - [ ] README를 실제 프로젝트 설명으로 교체 (현재 Vite 기본 템플릿)
 
 ## 자주 쓰는 명령어

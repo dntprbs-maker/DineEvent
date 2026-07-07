@@ -9,10 +9,9 @@ const TenantContext = createContext(null);
 export const TenantProvider = ({ children }) => {
   const { tenantId } = useParams();
   const [loading, setLoading] = useState(true);
+  // 관리자 인증은 Firebase Auth(AuthContext)로 이관 — 여기서는 매장 상태만 관리
   const [tenantMeta, setTenantMeta] = useState({
-    status: 'active',
-    // 기본 패스코드는 환경변수에서 참조 (하드코딩 금지)
-    adminPasscode: import.meta.env.VITE_DEFAULT_ADMIN_PASSCODE || ''
+    status: 'active'
   });
   const [tenantConfig, setTenantConfig] = useState({
     brandName: 'DineEvent',
@@ -31,14 +30,11 @@ export const TenantProvider = ({ children }) => {
         if (masterSnap.exists()) {
           const mData = masterSnap.data();
           setTenantMeta({
-            status: mData.status || 'active',
-            adminPasscode: mData.adminPasscode || '1234'
+            status: mData.status || 'active'
           });
         } else {
           setTenantMeta({
-            status: 'active',
-            // Firestore에 해당 테넌트 없실 시 환경변수 폴백
-            adminPasscode: import.meta.env.VITE_DEFAULT_ADMIN_PASSCODE || ''
+            status: 'active'
           });
         }
 

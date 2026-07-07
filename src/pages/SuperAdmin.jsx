@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../firebase';
-import { 
+import { db, firebaseConfig } from '../firebase';
+import {
   collection, getDocs, setDoc, doc, deleteDoc, updateDoc,
-  serverTimestamp 
+  serverTimestamp
 } from 'firebase/firestore';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { useAuth, tenantAdminEmail } from '../context/AuthContext';
 
 import TenantTable from '../components/admin/TenantTable';
 
 const SuperAdmin = () => {
   const navigate = useNavigate();
 
-  // 1. 보안용 비밀번호 상태 관리 (마스터 계정 비밀코드)
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // 개발 및 UI 편집을 위해 로그인 임시 패스
+  // 1. 마스터 계정 인증 — Firebase Auth (admins/{uid}.role === 'super')
+  const { loading: authLoading, login, logout, isSuperAdmin } = useAuth();
+  const isAuthenticated = isSuperAdmin;
   const [passcode, setPasscode] = useState('');
   const [authError, setAuthError] = useState('');
 
@@ -30,7 +34,7 @@ const SuperAdmin = () => {
     id: '',
     brandName: '',
     address: '',
-    adminPasscode: '1234' // 디폴트 비밀코드
+    adminPasscode: '' // Firebase Auth 비밀번호 (6자리 이상)
   });
   const [provisioning, setProvisioning] = useState(false);
   const [provisionSuccess, setProvisionSuccess] = useState('');
@@ -38,15 +42,21 @@ const SuperAdmin = () => {
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   // 보안 로그인 수행
-  // 슈퍼관리자 로그인: 환경변수에서 패스코드 참조 (소스 코드에 하드코딩 금지)
-  const handleLogin = (e) => {
+  // 슈퍼관리자 로그인: Firebase Auth 이메일/비밀번호 인증
+  // (이메일은 환경변수 VITE_SUPER_ADMIN_EMAIL, 입력값은 계정 비밀번호)
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const correctPasscode = import.meta.env.VITE_SUPER_ADMIN_PASSCODE;
-    if (passcode === correctPasscode) {
-      setIsAuthenticated(true);
+    const superEmail = import.meta.env.VITE_SUPER_ADMIN_EMAIL;
+    if (!superEmail) {
+      setAuthError('❌ 슈퍼관리자 이메일 환경변수(VITE_SUPER_ADMIN_EMAIL)가 설정되지 않았습니다.');
+      return;
+    }
+    try {
+      await login(superEmail, passcode);
       setAuthError('');
-      fetchTenants();
-    } else {
+      // isSuperAdmin이 true가 되면 useEffect에서 fetchTenants 자동 실행
+    } catch (err) {
+      console.error('슈퍼관리자 로그인 실패:', err);
       setAuthError('❌ 비밀코드가 올바르지 않습니다. 다시 입력해 주세요.');
     }
   };
@@ -86,12 +96,12 @@ const SuperAdmin = () => {
     }
   };
 
-  // 로그인 우회 시 가맹점 목록 자동 불러오기
+  // 로그인 완료 시 가맹점 목록 자동 불러오기
   useEffect(() => {
     if (isAuthenticated) {
       fetchTenants();
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // 팝업 모달이 열려있는 동안 배경 페이지 스크롤 차단
   useEffect(() => {
@@ -113,7 +123,6 @@ const SuperAdmin = () => {
       await setDoc(doc(db, 'tenants', 'dine-event'), {
         brandName: '다인이벤트 데모점',
         address: '서울 강남구 테헤란로 427',
-        adminPasscode: '1234',
         status: 'active',
         createdAt: serverTimestamp()
       });
@@ -169,7 +178,7 @@ const SuperAdmin = () => {
       alert('모든 가맹점 정보를 입력해 주세요.');
       return;
     }
-    
+
     // 아이디 영문+대시 규격 필터링
     const idRegex = /^[a-z0-9-]+$/;
     if (!idRegex.test(newStore.id)) {
@@ -177,19 +186,43 @@ const SuperAdmin = () => {
       return;
     }
 
+    // Firebase Auth 비밀번호 최소 요건
+    if (newStore.adminPasscode.trim().length < 6) {
+      alert('관리자 비밀코드는 6자리 이상이어야 합니다.');
+      return;
+    }
+
     setProvisioning(true);
     setProvisionSuccess('');
     try {
       const tenantRef = doc(db, 'tenants', newStore.id);
-      
-      // 1. 마스터 테넌트 컬렉션 등록
+
+      // 1. 마스터 테넌트 컬렉션 등록 (비밀코드는 Firebase Auth로만 관리 — 평문 저장 금지)
       await setDoc(tenantRef, {
         brandName: newStore.brandName,
         address: newStore.address,
-        adminPasscode: newStore.adminPasscode.trim(),
         status: 'active',
         createdAt: serverTimestamp()
       });
+
+      // 1-1. 가맹점 관리자 Firebase Auth 계정 생성
+      // 보조 앱 인스턴스를 사용해 현재 슈퍼관리자 세션을 유지한 채 계정을 만든다.
+      const secondaryApp = initializeApp(firebaseConfig, `provision-${Date.now()}`);
+      try {
+        const cred = await createUserWithEmailAndPassword(
+          getAuth(secondaryApp),
+          tenantAdminEmail(newStore.id),
+          newStore.adminPasscode.trim()
+        );
+        // 권한 매핑 문서 등록 (보안 규칙이 이 문서로 관리자 여부를 판별)
+        await setDoc(doc(db, 'admins', cred.user.uid), {
+          role: 'tenant',
+          tenantId: newStore.id,
+          createdAt: serverTimestamp()
+        });
+      } finally {
+        await deleteApp(secondaryApp);
+      }
 
       // 2. 가맹점 기본 홈 설정 데이터 프로비저닝 (DineEvent 스타일)
       await setDoc(doc(db, `tenants/${newStore.id}/settings`, 'home'), {
@@ -258,7 +291,7 @@ const SuperAdmin = () => {
       });
 
       setProvisionSuccess(`🎉 매장 [${newStore.brandName}] 이 성공적으로 프로비저닝되었습니다!`);
-      setNewStore({ id: '', brandName: '', address: '', adminPasscode: '1234' });
+      setNewStore({ id: '', brandName: '', address: '', adminPasscode: '' });
       await fetchTenants();
     } catch (err) {
       console.error(err);
@@ -409,6 +442,18 @@ const SuperAdmin = () => {
   };
 
 
+  // 인증 상태 확인 중 로딩 화면 (로그인 폼 깜빡임 방지)
+  if (authLoading) {
+    return (
+      <div style={{
+        background: '#050505', color: '#666', minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        인증 상태 확인 중...
+      </div>
+    );
+  }
+
   // ── 로그인 이전 뷰 (슈퍼관리자 패스코드 확인) ──
   if (!isAuthenticated) {
     return (
@@ -509,7 +554,7 @@ const SuperAdmin = () => {
           </div>
         </div>
         <button 
-          onClick={() => setIsAuthenticated(false)}
+          onClick={logout}
           style={{
             background: 'rgba(255,77,77,0.1)', border: '1px solid #ff4d4d', color: '#ff4d4d',
             padding: '0.5rem 1.2rem', borderRadius: '50px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold'
@@ -608,7 +653,7 @@ const SuperAdmin = () => {
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#aaa', marginBottom: '5px' }}>사장님 비밀코드</label>
                   <input 
                     type="text" 
-                    placeholder="1234" 
+                    placeholder="6자리 이상"
                     value={newStore.adminPasscode}
                     onChange={(e) => setNewStore({...newStore, adminPasscode: e.target.value})}
                     style={{ width: '100%', padding: '0.8rem', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', textAlign: 'center' }}
