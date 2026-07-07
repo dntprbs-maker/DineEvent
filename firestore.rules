@@ -66,6 +66,19 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    // ── 레거시 루트 경로 (단일 매장 시절 폴백) ──────────────────
+    // fetchDocWithFallback이 테넌트 경로에 문서가 없으면 루트를 조회함
+    // 매장 기본정보 폴백 (settings/home, settings/location): read만 공개
+    match /settings/{docId} {
+      allow read: if true;
+    }
+
+    // 메뉴 이미지 (content/menu_image): read 공개, write는 관리자 페이지에서 사용
+    match /content/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
     // 그 외 모든 컬렉션: 기본 차단
     // (위 규칙에 매칭되지 않는 경로는 자동 거부)
   }
