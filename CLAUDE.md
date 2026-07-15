@@ -15,7 +15,7 @@
 - React Router 7 (라우팅)
 - Firebase — Firestore(DB) + Storage(이미지)
 - Tailwind CSS 4
-- 배포: Netlify
+- 배포: Firebase Hosting (구 Netlify, 2026-07-08 이전 진행 중 — 상세는 TODO.md)
 
 ## 폴더 구조 (핵심만)
 
@@ -49,15 +49,9 @@
 - 가맹점 신규 발급 시 SuperAdmin이 관리자 계정 + admins 문서를 자동 생성
 - 보안 규칙은 `firestore.rules` — 배포: `npx firebase-tools deploy --only firestore:rules`
 
-## 알려진 할 일 (배포 전까지)
+## 할 일
 
-> 지금은 개발 단계라 임시로 둔 것들입니다. 실제 손님 데이터가 들어가기 전에 정리합니다.
-
-- [x] 관리자 임시 비밀번호를 코드에서 빼기 → Firebase Authentication 도입 완료 (2026-07-08)
-- [x] Firestore 보안 규칙 설정 → Auth 기반 규칙 배포 완료 (2026-07-08)
-- [ ] 룰렛 재고 차감(`tenants/{t}/content/prizes` 공개 쓰기)을 Cloud Function으로 이전
-- [ ] `entries` 공개 create에 필드 검증 추가 (firestore.rules TODO 참고)
-- [ ] README를 실제 프로젝트 설명으로 교체 (현재 Vite 기본 템플릿)
+> 할 일 목록은 `TODO.md`에서 관리합니다.
 
 ## 자주 쓰는 명령어
 
